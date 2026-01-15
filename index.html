@@ -11,439 +11,1799 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Nunito Sans', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f8fafc; overflow: hidden; font-size: 16px; }
-        .presentation { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
-        .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; padding: 25px 40px; opacity: 0; perspective: 1000px; transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1); flex-direction: column; overflow-y: auto; overflow-x: hidden; }
-        .slide.active { display: flex; opacity: 1; transform: scale(1); animation: slideEnter 0.8s cubic-bezier(0.23, 1, 0.32, 1) both; }
-        .slide.exit { opacity: 0; transform: scale(1.05) translateY(-10px); filter: blur(10px); }
+        /* ========================================
+           CSS CUSTOM PROPERTIES (DESIGN TOKENS)
+           ======================================== */
+        :root {
+            /* Primary Brand Colors */
+            --color-primary: #f59e0b;
+            --color-primary-light: #fbbf24;
+            --color-primary-dark: #d97706;
+            --color-primary-glow: rgba(245, 158, 11, 0.35);
+            
+            /* Background Colors - Dark Theme */
+            --color-bg-dark: #0f172a;
+            --color-bg-medium: #1e293b;
+            --color-bg-light: #334155;
+            --color-bg-card: rgba(30, 41, 59, 0.85);
+            
+            /* Text Colors */
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #e2e8f0;
+            --color-text-muted: #94a3b8;
+            --color-text-dim: #64748b;
+            
+            /* Status Colors */
+            --color-success: #10b981;
+            --color-success-light: #34d399;
+            --color-info: #3b82f6;
+            --color-info-light: #60a5fa;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --color-purple: #8b5cf6;
+            --color-pink: #ec4899;
+            
+            /* Glassmorphism */
+            --glass-bg: rgba(30, 41, 59, 0.75);
+            --glass-bg-light: rgba(51, 65, 85, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-hover: rgba(245, 158, 11, 0.3);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+            --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.35);
+            --glass-blur: blur(16px);
+            
+            /* Spacing Scale */
+            --space-2xs: 0.125rem;  /* 2px */
+            --space-xs: 0.25rem;    /* 4px */
+            --space-sm: 0.5rem;     /* 8px */
+            --space-md: 1rem;       /* 16px */
+            --space-lg: 1.5rem;     /* 24px */
+            --space-xl: 2rem;       /* 32px */
+            --space-2xl: 3rem;      /* 48px */
+            --space-3xl: 4rem;      /* 64px */
+            
+            /* Border Radius */
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 20px;
+            --radius-2xl: 28px;
+            --radius-full: 9999px;
+            
+            /* Transitions */
+            --transition-fast: 0.15s ease-out;
+            --transition-normal: 0.25s ease-out;
+            --transition-slow: 0.35s ease-out;
+            --transition-bounce: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            --transition-spring: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            
+            /* Fluid Typography */
+            --font-2xs: clamp(0.625rem, 1.2vw, 0.7rem);
+            --font-xs: clamp(0.7rem, 1.5vw, 0.8rem);
+            --font-sm: clamp(0.8rem, 1.8vw, 0.9rem);
+            --font-base: clamp(0.875rem, 2vw, 1rem);
+            --font-md: clamp(1rem, 2.2vw, 1.125rem);
+            --font-lg: clamp(1.125rem, 2.5vw, 1.25rem);
+            --font-xl: clamp(1.25rem, 3vw, 1.5rem);
+            --font-2xl: clamp(1.5rem, 4vw, 2rem);
+            --font-3xl: clamp(1.875rem, 5vw, 2.5rem);
+            --font-4xl: clamp(2.25rem, 6vw, 3rem);
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+            --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.35);
+            --shadow-glow: 0 0 20px var(--color-primary-glow);
+        }
         
-        /* New Premium Animation Keyframes */
-        @keyframes slideEnter {
-            from { opacity: 0; transform: scale(0.95) translateY(20px); filter: blur(5px); }
-            to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
-        }
-        @keyframes revealUp { 
-            from { opacity: 0; transform: translateY(40px) skewY(2deg); filter: blur(5px); } 
-            to { opacity: 1; transform: translateY(0) skewY(0); filter: blur(0); } 
-        }
-        @keyframes revealLeft { 
-            from { opacity: 0; transform: translateX(-40px); filter: blur(5px); } 
-            to { opacity: 1; transform: translateX(0); filter: blur(0); } 
-        }
-        @keyframes revealRight { 
-            from { opacity: 0; transform: translateX(40px); filter: blur(5px); } 
-            to { opacity: 1; transform: translateX(0); filter: blur(0); } 
-        }
-        @keyframes scaleInLux { 
-            from { opacity: 0; transform: scale(0.8); filter: blur(10px); } 
-            to { opacity: 1; transform: scale(1); filter: blur(0); } 
-        }
-        @keyframes glassGlow {
-            0%, 100% { box-shadow: 0 10px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05); }
-            50% { box-shadow: 0 10px 50px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255,255,255,0.1); }
+        /* ========================================
+           BASE STYLES
+           ======================================== */
+        *, *::before, *::after { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
         }
         
-        /* Element Entrance Animations */
-        .slide.active .slide-header { animation: revealUp 0.8s cubic-bezier(0.215, 0.61, 0.355, 1.0) 0.1s both; }
-        .slide.active .content-left { animation: revealLeft 0.9s cubic-bezier(0.215, 0.61, 0.355, 1.0) 0.3s both; }
-        .slide.active .content-right { animation: revealRight 0.9s cubic-bezier(0.215, 0.61, 0.355, 1.0) 0.4s both; }
-        .slide.active .chart-container { animation: scaleInLux 1s cubic-bezier(0.215, 0.61, 0.355, 1.0) 0.5s both; animation: glassGlow 5s infinite alternate; }
-        
-        /* Staggered Children for Grids */
-        .slide.active .stat-card, .slide.active .info-card, .slide.active .key-point, .slide.active tr {
-            animation: revealUp 0.7s cubic-bezier(0.215, 0.61, 0.355, 1.0) both;
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
         }
         
-        .slide.active .stat-card:nth-child(1) { animation-delay: 0.4s; }
-        .slide.active .stat-card:nth-child(2) { animation-delay: 0.45s; }
-        .slide.active .stat-card:nth-child(3) { animation-delay: 0.5s; }
-        .slide.active .stat-card:nth-child(4) { animation-delay: 0.55s; }
-        
-        .slide.active .info-card:nth-child(1) { animation-delay: 0.5s; }
-        .slide.active .info-card:nth-child(2) { animation-delay: 0.55s; }
-        .slide.active .info-card:nth-child(3) { animation-delay: 0.6s; }
-        .slide.active .info-card:nth-child(4) { animation-delay: 0.65s; }
-        .slide.active .info-card:nth-child(5) { animation-delay: 0.7s; }
-
-        .slide.active .key-point:nth-child(n) { animation-delay: calc(0.4s + (var(--i, 0) * 0.05s)); }
-        .slide.active tr:nth-child(n) { animation-delay: calc(0.5s + (var(--i, 0) * 0.03s)); }
-
-        /* Fancy Hover Effects */
-        .info-card, .stat-card, .highlight-box, .key-point {
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .info-card:hover, .stat-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: rgba(245, 158, 11, 0.5);
-            box-shadow: 0 15px 30px rgba(245, 158, 11, 0.2);
+        body { 
+            font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: linear-gradient(145deg, var(--color-bg-dark) 0%, var(--color-bg-medium) 100%); 
+            color: var(--color-text-primary); 
+            overflow: hidden; 
+            font-size: var(--font-base);
+            line-height: 1.65;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
         
-        .slide-opening .logo-img { animation: scaleInLux 1s cubic-bezier(0.215, 0.61, 0.355, 1.0) both; }
-        .slide-opening .logo-img:nth-child(1) { animation-delay: 0.2s; }
-        .slide-opening .logo-img:nth-child(2) { animation-delay: 0.3s; }
-        .slide-opening .logo-img:nth-child(3) { animation-delay: 0.4s; }
-        .slide-opening .logo-img:nth-child(4) { animation-delay: 0.5s; }
-        .slide-opening .main-title { animation: revealUp 1s ease-out 0.6s both; }
-        .slide-opening .sub-title { animation: revealUp 1s ease-out 0.8s both; }
-        .slide-opening .year-badge { animation: revealUp 1s ease-out 1s both; }
+        /* ========================================
+           GLASS CARD COMPONENT
+           ======================================== */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--glass-shadow);
+            transition: 
+                transform var(--transition-normal),
+                box-shadow var(--transition-normal),
+                border-color var(--transition-normal);
+        }
         
-        /* Opening Slide with Cover Image */
+        .glass-card:hover {
+            border-color: var(--glass-border-hover);
+            box-shadow: var(--glass-shadow-hover);
+        }
+        
+        /* ========================================
+           LAYOUT - PRESENTATION STRUCTURE
+           ======================================== */
+        .presentation { 
+            width: 100vw; 
+            height: 100vh; 
+            position: relative; 
+            overflow: hidden; 
+        }
+        
+        .slide { 
+            position: absolute; 
+            inset: 0;
+            display: none; 
+            padding: var(--space-lg) var(--space-xl); 
+            flex-direction: column; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+        
+        .slide.active { 
+            display: flex; 
+            opacity: 1;
+        }
+        
+        /* ========================================
+           MICRO-INTERACTIONS & HOVER EFFECTS
+           ======================================== */
+        .info-card, 
+        .stat-card, 
+        .highlight-box, 
+        .key-point, 
+        .company-card {
+            transition: 
+                transform var(--transition-spring),
+                border-color var(--transition-normal),
+                box-shadow var(--transition-normal);
+        }
+        
+        .info-card:hover, 
+        .stat-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            border-color: var(--color-primary-glow);
+            box-shadow: var(--shadow-lg), 0 0 20px var(--color-primary-glow);
+        }
+        
+        .region-tab, 
+        .nav-btn {
+            transition: 
+                transform var(--transition-fast),
+                background-color var(--transition-fast),
+                color var(--transition-fast),
+                border-color var(--transition-fast);
+        }
+        
+        .region-tab:hover, 
+        .nav-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .company-card:hover {
+            border-color: var(--color-primary);
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* ========================================
+           ACCESSIBILITY - FOCUS STATES
+           ======================================== */
+        :focus { outline: none; }
+        
+        :focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 3px;
+            border-radius: var(--radius-sm);
+        }
+        
+        button:focus-visible, 
+        input:focus-visible, 
+        a:focus-visible,
+        .region-tab:focus-visible,
+        .nav-btn:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+        
+        /* Reduced Motion Preference */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* ========================================
+           OPENING SLIDE
+           ======================================== */
         .slide-opening { 
             background: linear-gradient(135deg, rgba(30, 58, 95, 0.85) 0%, rgba(15, 23, 42, 0.9) 50%, rgba(30, 41, 59, 0.85) 100%),
                         url('cover_bg.webp') center/cover no-repeat;
-            justify-content: center; align-items: center; text-align: center; padding: 40px;
+            justify-content: center; 
+            align-items: center; 
+            text-align: center; 
+            padding: var(--space-xl);
         }
-        .logo-row { display: flex; justify-content: center; align-items: center; gap: 25px; margin-bottom: 25px; }
-        .logo-img { height: 70px; width: auto; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.3)); }
+        .logo-row { display: flex; justify-content: center; align-items: center; gap: var(--space-lg); margin-bottom: var(--space-lg); }
+        .logo-img { height: 70px; width: auto; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.3)); transition: transform var(--transition-normal); }
+        .logo-img:hover { transform: scale(1.05); }
         .logo-img.large { height: 90px; }
-        .main-title { font-size: 2.4rem; font-weight: 800; background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; text-shadow: 0 2px 20px rgba(0,0,0,0.3); }
-        .sub-title { font-size: 1.6rem; color: #f59e0b; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; }
-        .school-name { font-size: 1.4rem; color: #e2e8f0; font-weight: 600; letter-spacing: 0.5px; }
-        .year-badge { margin-top: 20px; padding: 10px 30px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50px; font-size: 1rem; font-weight: 700; color: #1e293b; box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3); }
+        .main-title { font-size: var(--font-3xl); font-weight: 800; background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: var(--space-sm); }
+        .sub-title { font-size: var(--font-xl); color: var(--color-primary); font-weight: 700; margin-bottom: var(--space-sm); letter-spacing: 1px; }
+        .school-name { font-size: var(--font-lg); color: #e2e8f0; font-weight: 600; letter-spacing: 0.5px; }
+        .year-badge { margin-top: var(--space-lg); padding: var(--space-sm) var(--space-xl); background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%); border-radius: var(--radius-full); font-size: var(--font-base); font-weight: 700; color: var(--color-bg-dark); box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3); transition: transform var(--transition-normal), box-shadow var(--transition-normal); }
+        .year-badge:hover { transform: scale(1.05); box-shadow: 0 15px 40px rgba(245, 158, 11, 0.4); }
         
-        .slide-header { margin-bottom: 15px; flex-shrink: 0; }
-        .slide-number { font-size: 1rem; color: #f59e0b; font-weight: 600; margin-bottom: 3px; }
-        .slide-title { font-size: 2.4rem; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
-        .slide-subtitle { font-size: 1.25rem; color: #94a3b8; }
+        /* ========================================
+           SLIDE HEADER
+           ======================================== */
+        .slide-header { margin-bottom: var(--space-md); flex-shrink: 0; }
+        .slide-number { font-size: var(--font-sm); color: var(--color-primary); font-weight: 600; margin-bottom: var(--space-xs); }
+        .slide-title { font-size: var(--font-2xl); font-weight: 700; color: var(--color-text-primary); margin-bottom: var(--space-xs); }
+        .slide-subtitle { font-size: var(--font-md); color: var(--color-text-secondary); }
         
-        .slide-content { flex: 1; display: flex; gap: 25px; overflow: hidden; min-height: 0; }
-        .content-left, .content-right { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: auto; }
-        .content-full { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: auto; }
-        
-        /* 3D Chart Container */
-        .chart-container { 
-            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
-            border-radius: 16px; padding: 20px; 
-            border: 1px solid rgba(148, 163, 184, 0.15); 
-            flex: 1; min-height: 280px; 
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
-            position: relative;
+        /* ========================================
+           CONTENT LAYOUT
+           ======================================== */
+        .slide-content { 
+            flex: 1; 
+            display: flex; 
+            gap: var(--space-lg); 
+            overflow: hidden; 
+            min-height: 0; 
         }
+        
+        .content-left, 
+        .content-right { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 0; 
+            overflow: auto;
+            gap: var(--space-md);
+        }
+        
+        .content-full { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 0; 
+            overflow: auto; 
+        }
+        
+        /* ========================================
+           CHART CONTAINER
+           ======================================== */
+        .chart-container { 
+            background: var(--color-bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            border: 1px solid var(--glass-border);
+            flex: 1; 
+            min-height: 280px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.03);
+            position: relative;
+            overflow: hidden;
+        }
+        
         .chart-container::before {
             content: '';
-            position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.3), transparent);
+            position: absolute;
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--color-primary-glow), transparent);
         }
-        .chart-container canvas { max-width: 100% !important; max-height: 100% !important; }
         
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
-        .stat-card { background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border-radius: 12px; padding: 14px; border: 1px solid rgba(148, 163, 184, 0.1); text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-        .stat-value { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .stat-label { font-size: 1rem; color: #94a3b8; margin-top: 3px; }
+        .chart-container canvas { 
+            max-width: 100% !important; 
+            max-height: 100% !important; 
+        }
         
-        .highlight-box { background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.08) 100%); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-        .highlight-box h3 { color: #f59e0b; font-size: 1.3rem; margin-bottom: 6px; }
-        .highlight-box p { color: #e2e8f0; font-size: 1.2rem; line-height: 1.7; }
+        /* ========================================
+           STATS GRID & CARDS
+           ======================================== */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
         
-        .table-container { background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border-radius: 12px; padding: 12px; border: 1px solid rgba(148, 163, 184, 0.1); flex: 1; overflow: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-        .data-table { width: 100%; border-collapse: collapse; font-size: 1.05rem; }
-        .data-table th { background: rgba(245, 158, 11, 0.15); padding: 10px 12px; text-align: left; font-weight: 600; color: #f59e0b; position: sticky; top: 0; }
-        .data-table td { padding: 8px 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.08); }
-        .data-table tr:hover { background: rgba(245, 158, 11, 0.05); }
+        .stat-card { 
+            background: var(--color-bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            border: 1px solid var(--glass-border);
+            text-align: center;
+            box-shadow: var(--shadow-md);
+        }
         
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 15px; font-size: 0.65rem; font-weight: 600; }
-        .badge-success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .badge-warning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .badge-info { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-        .badge-purple { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+        .stat-value { 
+            font-size: var(--font-3xl);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
         
-        /* Staggering for Key Points */
-        .slide.active .key-point:nth-child(1) { animation-delay: 0.4s; }
-        .slide.active .key-point:nth-child(2) { animation-delay: 0.45s; }
-        .slide.active .key-point:nth-child(3) { animation-delay: 0.5s; }
-        .slide.active .key-point:nth-child(4) { animation-delay: 0.55s; }
-        .slide.active .key-point:nth-child(5) { animation-delay: 0.6s; }
-        .slide.active .key-point:nth-child(6) { animation-delay: 0.65s; }
+        .stat-label { 
+            font-size: var(--font-sm);
+            color: var(--color-text-muted);
+            margin-top: var(--space-xs);
+            font-weight: 500;
+        }
         
-        /* Staggering for Table Rows */
-        .slide.active tr:nth-child(1) { animation-delay: 0.5s; }
-        .slide.active tr:nth-child(2) { animation-delay: 0.53s; }
-        .slide.active tr:nth-child(3) { animation-delay: 0.56s; }
-        .slide.active tr:nth-child(4) { animation-delay: 0.59s; }
-        .slide.active tr:nth-child(5) { animation-delay: 0.62s; }
-        .slide.active tr:nth-child(6) { animation-delay: 0.65s; }
-        .slide.active tr:nth-child(7) { animation-delay: 0.68s; }
-        .slide.active tr:nth-child(8) { animation-delay: 0.71s; }
-        .slide.active tr:nth-child(9) { animation-delay: 0.74s; }
-        .slide.active tr:nth-child(10) { animation-delay: 0.77s; }
+        /* ========================================
+           HIGHLIGHT BOX
+           ======================================== */
+        .highlight-box { 
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.06) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-left: 3px solid var(--color-primary);
+            border-radius: var(--radius-md);
+            padding: var(--space-md) var(--space-lg);
+            margin-bottom: var(--space-md);
+        }
+        
+        .highlight-box h3 { 
+            color: var(--color-primary);
+            font-size: var(--font-lg);
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+        
+        .highlight-box p { 
+            color: var(--color-text-secondary);
+            font-size: var(--font-base);
+            line-height: 1.7;
+        }
+        
+        /* ========================================
+           DATA TABLE
+           ======================================== */
+        .table-container { 
+            background: var(--color-bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            border: 1px solid var(--glass-border);
+            flex: 1;
+            overflow: auto;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .data-table { 
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--font-base);
+        }
+        
+        .data-table th { 
+            background: rgba(245, 158, 11, 0.1);
+            padding: var(--space-sm) var(--space-md);
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-primary);
+            position: sticky;
+            top: 0;
+            border-bottom: 2px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        .data-table td { 
+            padding: var(--space-sm) var(--space-md);
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--color-text-secondary);
+        }
+        
+        .data-table tr:hover { 
+            background: rgba(245, 158, 11, 0.04);
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* ========================================
+           BADGE COMPONENTS
+           ======================================== */
+        .badge { 
+            display: inline-flex;
+            align-items: center;
+            padding: var(--space-2xs) var(--space-sm);
+            border-radius: var(--radius-full);
+            font-size: var(--font-2xs);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        
+        .badge-success { 
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--color-success-light);
+        }
+        
+        .badge-warning { 
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--color-primary-light);
+        }
+        
+        .badge-info { 
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--color-info-light);
+        }
+        
+        .badge-purple { 
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+        }
+        
+        /* ========================================
+           KEY POINTS
+           ======================================== */
+        .key-points { 
+            background: var(--color-bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--space-lg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .key-point { 
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+        
+        .key-point:last-child { 
+            margin-bottom: 0;
+        }
+        
+        .point-icon { 
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-xs);
+            font-weight: 700;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            color: white;
+        }
+        
+        .point-text { 
+            font-size: var(--font-base);
+            color: var(--color-text-secondary);
+            line-height: 1.65;
+        }
+        
+        /* ========================================
+           INFO CARDS
+           ======================================== */
+        .info-cards { 
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+        
+        .info-card { 
+            background: var(--color-bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--space-md) var(--space-lg);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .info-icon { 
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-xl);
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px var(--color-primary-glow);
+        }
+        
+        .info-text h4 { 
+            font-size: var(--font-md);
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-2xs);
+        }
+        
+        .info-text p { 
+            font-size: var(--font-sm);
+            color: var(--color-text-muted);
+            line-height: 1.5;
+        }
+        
+        /* ========================================
+           TIMELINE INFOGRAPHIC
+           ======================================== */
+        .timeline-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: var(--space-lg);
+            flex: 1;
+            align-items: stretch;
+            position: relative;
+            padding: var(--space-sm) 0;
+        }
+        
+        /* Arrow connectors between cards */
+        .timeline-card:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: calc(-1 * var(--space-lg) / 2 - 8px);
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-text-dim);
+            z-index: 2;
+            opacity: 0.5;
+        }
+        
+        .timeline-card {
+            background: linear-gradient(145deg, 
+                rgba(30, 41, 59, 0.95) 0%, 
+                rgba(15, 23, 42, 0.98) 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: var(--space-sm);
+            position: relative;
+            z-index: 1;
+            min-height: 180px;
+            transition: 
+                transform var(--transition-spring),
+                box-shadow var(--transition-normal),
+                border-color var(--transition-normal);
+        }
+        
+        .timeline-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .timeline-step {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            flex-shrink: 0;
+            margin-bottom: var(--space-2xs);
+        }
+        
+        .timeline-step::before {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            background: inherit;
+            opacity: 0.2;
+            z-index: -1;
+        }
+        
+        .timeline-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+            gap: var(--space-2xs);
+            flex: 1;
+            width: 100%;
+        }
+        
+        .timeline-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            line-height: 1.35;
+            text-align: left;
+            width: 100%;
+            margin-bottom: var(--space-xs);
+        }
+        
+        .timeline-date {
+            font-size: var(--font-2xs);
+            font-weight: 600;
+            padding: var(--space-2xs) var(--space-sm);
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-full);
+            display: inline-block;
+            color: var(--color-text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            align-self: flex-start;
+        }
+        
+        .timeline-desc {
+            font-size: var(--font-xs);
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            margin-top: var(--space-xs);
+            text-align: left;
+        }
+        
+        /* Bullet list styling inside timeline */
+        .timeline-list {
+            list-style: none;
+            padding: 0;
+            margin: var(--space-xs) 0 0 0;
+            width: 100%;
+        }
+        
+        .timeline-list li {
+            font-size: 1rem;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            padding-left: var(--space-md);
+            position: relative;
+            margin-bottom: var(--space-xs);
+        }
+        
+        .timeline-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: currentColor;
+            font-weight: 700;
+        }
+        
+        .timeline-card.purple .timeline-list li::before { color: #a78bfa; }
+        .timeline-card.blue .timeline-list li::before { color: #60a5fa; }
+        .timeline-card.green .timeline-list li::before { color: #34d399; }
+        .timeline-card.orange .timeline-list li::before { color: #fbbf24; }
+        .timeline-card.pink .timeline-list li::before { color: #f472b6; }
+        
+        /* Flow Steps - Vertical workflow with arrows */
+        .flow-steps {
+            list-style: none;
+            padding: 0;
+            margin: var(--space-xs) 0 0 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            align-items: center;
+        }
+        
+        .flow-steps li {
+            font-size: 1rem;
+            color: var(--color-text-primary);
+            line-height: 1.4;
+            padding: var(--space-sm) var(--space-md);
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: var(--radius-md);
+            text-align: center;
+            position: relative;
+            font-weight: 500;
+            width: 100%;
+        }
+        
+        .flow-steps li:not(:last-child)::after {
+            content: '↓';
+            position: absolute;
+            left: 50%;
+            bottom: calc(-1rem - 2px);
+            transform: translateX(-50%);
+            font-size: 1.1rem;
+            font-weight: 800;
+            opacity: 0.85;
+            z-index: 1;
+        }
+        
+        .timeline-card.purple .flow-steps li { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.25); }
+        .timeline-card.purple .flow-steps li::after { color: #a78bfa; }
+        .timeline-card.blue .flow-steps li { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.25); }
+        .timeline-card.blue .flow-steps li::after { color: #60a5fa; }
+        .timeline-card.green .flow-steps li { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.25); }
+        .timeline-card.green .flow-steps li::after { color: #34d399; }
+        .timeline-card.orange .flow-steps li { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.25); }
+        .timeline-card.orange .flow-steps li::after { color: #fbbf24; }
+        .timeline-card.pink .flow-steps li { background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.25); }
+        .timeline-card.pink .flow-steps li::after { color: #f472b6; }
+        
+        /* Desktop only: Center title for flow-steps cards (Alur Pengajuan) */
+        @media (min-width: 769px) {
+            .timeline-card:has(.flow-steps) .timeline-title {
+                text-align: center;
+            }
+            .timeline-card:has(.flow-steps) .timeline-content {
+                align-items: center;
+            }
+        }
+        
+        /* Timeline card color variants with subtle background tint */
+        .timeline-card.purple { 
+            border-color: rgba(139, 92, 246, 0.35);
+            background: linear-gradient(145deg, rgba(139, 92, 246, 0.08) 0%, rgba(15, 23, 42, 0.98) 100%);
+        }
+        .timeline-card.purple:hover { 
+            border-color: #8b5cf6; 
+            box-shadow: 0 16px 48px rgba(139, 92, 246, 0.25); 
+        }
+        .timeline-card.purple .timeline-step { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+        .timeline-card.purple .timeline-title { color: #a78bfa; }
+        .timeline-card.purple .timeline-date { color: #c4b5fd; }
+        
+        .timeline-card.blue { 
+            border-color: rgba(59, 130, 246, 0.35);
+            background: linear-gradient(145deg, rgba(59, 130, 246, 0.08) 0%, rgba(15, 23, 42, 0.98) 100%);
+        }
+        .timeline-card.blue:hover { 
+            border-color: #3b82f6; 
+            box-shadow: 0 16px 48px rgba(59, 130, 246, 0.25); 
+        }
+        .timeline-card.blue .timeline-step { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .timeline-card.blue .timeline-title { color: #60a5fa; }
+        .timeline-card.blue .timeline-date { color: #93c5fd; }
+        
+        .timeline-card.green { 
+            border-color: rgba(16, 185, 129, 0.35);
+            background: linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.98) 100%);
+        }
+        .timeline-card.green:hover { 
+            border-color: #10b981; 
+            box-shadow: 0 16px 48px rgba(16, 185, 129, 0.25); 
+        }
+        .timeline-card.green .timeline-step { background: linear-gradient(135deg, #10b981, #047857); }
+        .timeline-card.green .timeline-title { color: #34d399; }
+        .timeline-card.green .timeline-date { color: #6ee7b7; }
+        
+        .timeline-card.orange { 
+            border-color: rgba(245, 158, 11, 0.35);
+            background: linear-gradient(145deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.98) 100%);
+        }
+        .timeline-card.orange:hover { 
+            border-color: #f59e0b; 
+            box-shadow: 0 16px 48px rgba(245, 158, 11, 0.25); 
+        }
+        .timeline-card.orange .timeline-step { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .timeline-card.orange .timeline-title { color: #fbbf24; }
+        .timeline-card.orange .timeline-date { color: #fcd34d; }
+        
+        .timeline-card.pink { 
+            border-color: rgba(236, 72, 153, 0.35);
+            background: linear-gradient(145deg, rgba(236, 72, 153, 0.08) 0%, rgba(15, 23, 42, 0.98) 100%);
+        }
+        .timeline-card.pink:hover { 
+            border-color: #ec4899; 
+            box-shadow: 0 16px 48px rgba(236, 72, 153, 0.25); 
+        }
+        .timeline-card.pink .timeline-step { background: linear-gradient(135deg, #ec4899, #be185d); }
+        .timeline-card.pink .timeline-title { color: #f472b6; }
+        .timeline-card.pink .timeline-date { color: #f9a8d4; }
+        
+        /* Tablet timeline - 3 columns + 2 */
+        @media (max-width: 1200px) {
+            .timeline-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .timeline-container::before {
+                display: none;
+            }
+        }
+        
+        /* Mobile timeline - vertical stack */
+        @media (max-width: 768px) {
+            .timeline-container {
+                grid-template-columns: 1fr;
+                gap: var(--space-sm);
+                padding-left: var(--space-xl);
+            }
+            
+            .timeline-container::before {
+                display: block;
+                top: 0;
+                bottom: 0;
+                left: 12px;
+                right: auto;
+                width: 4px;
+                height: 100%;
+                transform: none;
+            }
+            
+            .timeline-card {
+                flex-direction: row;
+                text-align: left;
+                align-items: flex-start;
+                padding: var(--space-md);
+                gap: var(--space-md);
+                min-height: auto;
+            }
+            
+            .timeline-step {
+                width: 44px;
+                height: 44px;
+                font-size: 1.2rem;
+                margin-bottom: 0;
+            }
+            
+            .timeline-content {
+                align-items: flex-start;
+                flex: 1;
+            }
+            
+            .timeline-title {
+                font-size: var(--font-sm);
+            }
+            
+            .timeline-desc {
+                margin-top: var(--space-xs);
+            }
+        }
+        
+        /* Small mobile */
+        @media (max-width: 480px) {
+            .timeline-container {
+                padding-left: var(--space-lg);
+            }
+            
+            .timeline-container::before {
+                left: 8px;
+                width: 3px;
+            }
+            
+            .timeline-step {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
+            }
+            
+            .timeline-card {
+                padding: var(--space-sm);
+                gap: var(--space-sm);
+            }
+            
+            /* Hide horizontal arrows on mobile */
+            .timeline-card:not(:last-child)::after {
+                display: none;
+            }
+            
+            /* Flow steps mobile adjustments */
+            .flow-steps {
+                gap: 1rem;
+            }
+            
+            .flow-steps li {
+                font-size: 0.85rem;
+                padding: var(--space-xs) var(--space-sm);
+                padding-left: var(--space-lg);
+                text-align: left;
+                background: transparent;
+                border: none;
+            }
+            
+            /* Add bullet on mobile */
+            .flow-steps li::before {
+                content: '•';
+                position: absolute;
+                left: var(--space-xs);
+                font-weight: 700;
+            }
+            
+            /* Hide vertical arrows on mobile */
+            .flow-steps li:not(:last-child)::after {
+                display: none;
+            }
+            
+            /* Timeline list mobile adjustments */
+            .timeline-list li {
+                font-size: 0.85rem;
+            }
+        }
+        
+        /* Slide 4 Manfaat PKL - Mobile grid fix */
+        @media (max-width: 768px) {
+            /* 3-column grid to single column on mobile */
+            .slide-content > div[style*="grid-template-columns: repeat(3"] {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: var(--space-sm) !important;
+            }
+            
+            .key-points {
+                padding: var(--space-sm);
+            }
+            
+            .key-points h4 {
+                font-size: 0.9rem;
+                margin-bottom: var(--space-xs);
+            }
+            
+            .key-point {
+                padding: var(--space-2xs) 0;
+            }
+            
+            .point-icon {
+                width: 24px;
+                height: 24px;
+                font-size: 0.7rem;
+            }
+            
+            .point-text {
+                font-size: 0.8rem;
+            }
+            
+            /* Stats grid on slide 5 - 2 columns mobile */
+            .stats-grid[style*="grid-template-columns: repeat(2"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: var(--space-xs) !important;
+            }
+            
+            .stat-card {
+                padding: var(--space-sm) !important;
+            }
+            
+            .stat-value {
+                font-size: 1.2rem;
+            }
+            
+            .stat-label {
+                font-size: 0.7rem;
+            }
+        }
+        
+        /* ========================================
+           CLOSING SLIDE
+           ======================================== */
+        .slide-closing { 
+            background: linear-gradient(135deg, rgba(30, 58, 95, 0.9) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(30, 41, 59, 0.9) 100%),
+                        url('cover_bg.webp') center/cover no-repeat;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .closing-title { 
+            font-size: var(--font-3xl);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--space-md);
+        }
+        
+        .closing-text { 
+            font-size: var(--font-md);
+            color: var(--color-text-muted);
+            line-height: 1.65;
+            margin-bottom: var(--space-xl);
+            max-width: 700px;
+        }
+        
+        .closing-stats { 
+            display: flex;
+            justify-content: center;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+            flex-wrap: wrap;
+        }
+        
+        .closing-stat { 
+            text-align: center;
+            background: var(--color-bg-card);
+            padding: var(--space-md) var(--space-xl);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+            min-width: 120px;
+        }
+        
+        .closing-stat-value { 
+            font-size: var(--font-2xl);
+            font-weight: 800;
+            color: var(--color-primary);
+        }
+        
+        .closing-stat-label { 
+            font-size: var(--font-xs);
+            color: var(--color-text-muted);
+            margin-top: var(--space-2xs);
+        }
+        
+        .thank-you { 
+            font-size: var(--font-lg);
+            color: var(--color-text-primary);
+            font-weight: 600;
+        }
+        
+        /* ========================================
+           MAP SECTION & COMPANY LIST - REDESIGNED
+           ======================================== */
+        .map-section { 
+            display: flex;
+            gap: var(--space-lg);
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+        
+        .company-list-panel { 
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            overflow: hidden;
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            max-height: 100%;
+        }
+        
+        .region-tabs { 
+            display: flex;
+            gap: var(--space-xs);
+            flex-wrap: wrap;
+            padding: var(--space-sm);
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .region-tab { 
+            padding: var(--space-xs) var(--space-md);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-full);
+            font-size: var(--font-xs);
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--color-text-muted);
+            transition: all var(--transition-normal);
+        }
+        
+        .region-tab:hover { 
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: var(--color-primary);
+            transform: translateY(-1px);
+        }
+        
+        .region-tab.active { 
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: var(--color-bg-dark);
+            border-color: var(--color-primary);
+            box-shadow: 0 4px 15px var(--color-primary-glow);
+        }
+        
+        /* Search Container */
+        .search-container {
+            padding: var(--space-sm) var(--space-md);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: var(--space-sm) var(--space-md);
+            padding-left: 40px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-full);
+            color: var(--color-text-primary);
+            font-size: var(--font-sm);
+            font-family: inherit;
+            outline: none;
+            transition: all var(--transition-normal);
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        .search-container::before {
+            content: '🔍';
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            opacity: 0.5;
+            z-index: 1;
+        }
+        
+        .search-input::placeholder {
+            color: var(--color-text-dim);
+        }
+        
+        .search-input:focus {
+            border-color: var(--color-primary);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 3px var(--color-primary-glow);
+        }
+        
+        /* Panel Header */
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md) var(--space-lg);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+            border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        .panel-header h4 {
+            color: var(--color-primary);
+            font-size: var(--font-lg);
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            text-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+        }
+        
+        .panel-toggle {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            color: var(--color-primary);
+            font-size: var(--font-md);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-normal);
+        }
+        
+        .panel-toggle:hover {
+            background: var(--color-primary);
+            color: var(--color-bg-dark);
+        }
+        
+        /* Company Cards Container */
+        .company-cards { 
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            min-height: 200px;
+            max-height: 300px; /* Reduced to show ~5 items with scroll */
+        }
+        
+        /* Individual Company Card */
+        .company-card { 
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .company-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--color-primary);
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+        
+        .company-card:hover { 
+            transform: translateX(4px);
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .company-card:hover::before {
+            opacity: 1;
+        }
+        
+        .company-card.selected { 
+            background: linear-gradient(145deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+            border-color: var(--color-primary);
+            box-shadow: 0 0 20px var(--color-primary-glow);
+        }
+        
+        .company-card.selected::before {
+            opacity: 1;
+        }
+        
+        .company-card h5 { 
+            color: var(--color-text-primary);
+            font-size: var(--font-sm);
+            font-weight: 600;
+            margin-bottom: var(--space-xs);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+        
+        .company-card h5 .marker { 
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+        
+        .company-card p { 
+            color: var(--color-text-muted);
+            font-size: var(--font-xs);
+            line-height: 1.5;
+            margin-bottom: var(--space-xs);
+        }
+        
+        .company-card .city-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-full);
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+        
+        /* Map Panel */
+        .map-panel { 
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            min-width: 0;
+        }
+        
+        .map-container { 
+            flex: 1;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 2px solid rgba(245, 158, 11, 0.2);
+            min-height: 400px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+        
+        .map-container::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius-lg);
+            pointer-events: none;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .map-container iframe { 
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* Map Legend */
+        .map-legend { 
+            display: flex;
+            gap: var(--space-md);
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: var(--space-sm) var(--space-md);
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+        }
+        
+        /* Map Inline (inside panel) */
+        .map-container-inline {
+            padding: var(--space-sm);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .map-container-inline #leafletMap {
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        .map-legend-inline {
+            display: flex;
+            gap: var(--space-sm);
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: var(--space-xs) 0;
+            margin-top: var(--space-xs);
+        }
+        
+        /* Desktop/Mobile Visibility */
+        .mobile-only {
+            display: none !important;
+        }
+        
+        .desktop-only {
+            display: flex;
+        }
+        
+        .legend-item { 
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: var(--font-xs);
+            color: var(--color-text-secondary);
+            font-weight: 500;
+        }
+        
+        .legend-dot { 
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        /* ========================================
+           NAVIGATION CONTROLS
+           ======================================== */
+        .nav-controls { 
+            position: fixed;
+            bottom: var(--space-md);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            z-index: 100;
+            background: var(--color-bg-card);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-full);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .nav-btn { 
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            color: var(--color-text-primary);
+            font-size: var(--font-base);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-btn:hover { 
+            background: var(--color-primary);
+            color: var(--color-bg-dark);
+            border-color: var(--color-primary);
+        }
+        
+        .slide-indicator { 
+            display: flex;
+            gap: var(--space-xs);
+        }
+        
+        .indicator-dot { 
+            width: 8px;
+            height: 8px;
+            background: var(--glass-border);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .indicator-dot:hover {
+            background: var(--color-text-muted);
+        }
+        
+        .indicator-dot.active { 
+            background: var(--color-primary);
+            width: 24px;
+            border-radius: var(--radius-sm);
+        }
+        
+        /* ========================================
+           PROGRESS BAR
+           ======================================== */
+        .progress-bar { 
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            z-index: 100;
+            transition: width var(--transition-normal);
+        }
+        
+        /* ========================================
+           CUSTOM SCROLLBAR
+           ======================================== */
+        ::-webkit-scrollbar { 
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track { 
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: var(--radius-sm);
+        }
+        
+        ::-webkit-scrollbar-thumb { 
+            background: var(--color-bg-light);
+            border-radius: var(--radius-sm);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover { 
+            background: var(--color-primary);
+        }
 
-        
-        .key-points { background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border-radius: 12px; padding: 16px; border: 1px solid rgba(148, 163, 184, 0.1); box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-        .key-point { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
-        .key-point:last-child { margin-bottom: 0; }
-        .point-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3); }
-        .point-text { font-size: 1.2rem; color: #e2e8f0; line-height: 1.7; }
-        
-        .info-cards { display: flex; flex-direction: column; gap: 10px; }
-        .info-card { background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border-radius: 12px; padding: 14px 16px; border: 1px solid rgba(148, 163, 184, 0.1); display: flex; align-items: center; gap: 14px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        .info-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
-        .info-text h4 { font-size: 1.15rem; color: #f8fafc; margin-bottom: 3px; }
-        .info-text p { font-size: 1rem; color: #94a3b8; }
-        
-        .slide-closing { background: linear-gradient(135deg, rgba(30, 58, 95, 0.9) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(30, 41, 59, 0.9) 100%), url('cover_bg.webp') center/cover no-repeat; justify-content: center; align-items: center; text-align: center; }
-        .closing-title { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
-        .closing-text { font-size: 1.15rem; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; max-width: 700px; }
-        .closing-stats { display: flex; justify-content: center; gap: 30px; margin-bottom: 25px; flex-wrap: wrap; }
-        .closing-stat { text-align: center; background: rgba(30, 41, 59, 0.8); padding: 15px 25px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.1); }
-        .closing-stat-value { font-size: 2rem; font-weight: 800; color: #f59e0b; }
-        .closing-stat-label { font-size: 0.75rem; color: #94a3b8; }
-        .thank-you { font-size: 1.2rem; color: #f8fafc; font-weight: 600; }
-        
-        /* Map Section */
-        .map-section { display: flex; gap: 15px; flex: 1; min-height: 0; }
-        .company-list-panel { width: 320px; display: flex; flex-direction: column; gap: 10px; overflow: visible; }
-        .region-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
-        .region-tab { padding: 6px 12px; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; color: #94a3b8; }
-        .region-tab:hover, .region-tab.active { background: #f59e0b; color: #1e293b; border-color: #f59e0b; }
-        .company-cards { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; }
-        .company-card { background: rgba(30, 41, 59, 0.8); border-radius: 10px; padding: 12px; border: 1px solid rgba(148, 163, 184, 0.1); cursor: pointer; transition: all 0.3s; flex-shrink: 0; }
-        .company-card:hover { border-color: #f59e0b; transform: translateX(5px); }
-        .company-card.selected { background: rgba(245, 158, 11, 0.2); border-color: #f59e0b; }
-        .company-card h5 { color: #f8fafc; font-size: 0.95rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-        .company-card h5 .marker { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-        .company-card p { color: #94a3b8; font-size: 0.85rem; line-height: 1.4; }
-        
-        .map-panel { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-        .map-container { flex: 1; border-radius: 12px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.2); min-height: 300px; }
-        .map-container iframe { width: 100%; height: 100%; border: none; }
-        .map-legend { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; padding: 10px; background: rgba(30, 41, 59, 0.8); border-radius: 10px; }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #94a3b8; }
-        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
-        
-        .nav-controls { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; z-index: 100; }
-        .nav-btn { width: 40px; height: 40px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 50%; color: #f8fafc; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; }
-        .nav-btn:hover { background: #f59e0b; color: #1e293b; }
-        .slide-indicator { display: flex; gap: 5px; }
-        .indicator-dot { width: 7px; height: 7px; background: rgba(148, 163, 184, 0.3); border-radius: 50%; cursor: pointer; transition: all 0.3s ease; }
-        .indicator-dot.active { background: #f59e0b; width: 22px; border-radius: 4px; }
-        
-        .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); z-index: 100; transition: width 0.3s ease; }
-        
-
-
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
-
-        /* Mobile Responsive Styles */
+        /* ========================================
+           MOBILE RESPONSIVE STYLES
+           ======================================== */
         @media (max-width: 1024px) {
-            .slide { padding: 20px 25px; }
-            .slide-content { gap: 15px; }
+            .slide { padding: var(--space-lg); }
+            .slide-content { gap: var(--space-md); }
             .company-list-panel { width: 280px; }
-            .map-section { gap: 12px; }
+            .map-section { gap: var(--space-md); }
         }
 
         @media (max-width: 768px) {
-            /* Allow scrolling on mobile */
-            body { overflow: auto; }
+            /* Base Layout */
+            body { overflow-y: auto; overflow-x: hidden; }
             .presentation { height: auto; min-height: 100vh; overflow: visible; }
+            
             .slide { 
                 position: relative; 
                 height: auto; 
                 min-height: 100vh; 
-                padding: 15px 20px 80px 20px; /* Extra padding at bottom for nav */
+                padding: var(--space-md) var(--space-md) 100px var(--space-md);
                 overflow: visible;
+                display: none;
+                opacity: 0;
             }
-            .slide.active { display: flex; }
+            .slide.active { display: flex; opacity: 1; }
             
-            .slide-header { margin-bottom: 12px; }
-            .slide-title { font-size: 1.8rem; }
-            .slide-subtitle { font-size: 1rem; }
-            .slide-number { font-size: 0.85rem; }
+            /* Header */
+            .slide-header { margin-bottom: var(--space-md); }
+            .slide-title { font-size: var(--font-2xl); line-height: 1.2; }
+            .slide-subtitle { font-size: var(--font-base); }
+            .slide-number { font-size: var(--font-xs); }
             
-            /* Hide speaker notes on mobile */
-            .speaker-notes { display: none !important; }
+            /* Content Layout - Stack Vertically */
+            .slide-content { 
+                flex-direction: column !important; 
+                gap: var(--space-md) !important; 
+                height: auto !important;
+                overflow: visible !important;
+            }
+            .content-left, .content-right, .content-full { 
+                flex: none !important; 
+                width: 100% !important; 
+                overflow: visible !important; 
+            }
             
-            .slide-content { flex-direction: column; gap: 12px; }
-            .content-left, .content-right { flex: none; width: 100%; }
+            /* Chart & Table Container Mobile Fixes */
+            .chart-container {
+                height: 280px !important;
+                min-height: 280px !important;
+                flex: none !important;
+                padding: var(--space-sm) !important;
+                margin-bottom: var(--space-sm) !important;
+            }
+            .table-container {
+                max-height: 400px !important;
+                overflow: auto !important;
+                flex: none !important;
+            }
             
-            /* Map Section Mobile */
-            .map-section { flex-direction: column; height: auto; min-height: 500px; }
-            .company-list-panel { width: 100%; max-height: 200px; min-height: 150px; overflow: visible; }
-            .company-cards { max-height: 120px; overflow-y: auto; min-height: 80px; }
-            .region-tabs { justify-content: center; flex-wrap: wrap; }
-            .region-tab { padding: 6px 10px; font-size: 0.8rem; }
+            /* Grid Components */
+            .stats-grid { 
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important; 
+                gap: var(--space-sm) !important;
+            }
+            .closing-stats { 
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important; 
+                gap: var(--space-sm) !important;
+            }
+            .logo-row { 
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
+                gap: var(--space-md) !important; 
+                justify-content: center !important; 
+            }
             
-            .map-panel { min-height: 300px !important; height: 300px; flex: 1; }
-            .map-container { min-height: 280px !important; height: 280px !important; }
-            #leafletMap { min-height: 280px !important; height: 280px !important; }
-            .map-legend { gap: 8px; padding: 8px; flex-wrap: wrap; }
-            .legend-item { font-size: 0.75rem; }
-            .legend-dot { width: 10px; height: 10px; }
+            /* Timeline Cards - Stack Vertically */
+            .slide-content > div[style*="display: flex"][style*="align-items: stretch"] {
+                flex-direction: column !important;
+                gap: var(--space-sm) !important;
+            }
+            
+            /* Region Tabs - Wrap Layout */
+            .region-tabs {
+                display: flex !important;
+                flex-direction: row !important; 
+                flex-wrap: wrap !important;
+                justify-content: flex-start !important;
+                gap: var(--space-sm) !important;
+                padding: var(--space-sm) !important;
+            }
+            .region-tab { 
+                white-space: nowrap !important; 
+                flex-shrink: 0 !important;
+                padding: var(--space-sm) var(--space-md) !important;
+                font-size: var(--font-sm) !important;
+            }
+
+            .map-section { 
+                display: block !important;
+                width: 100% !important;
+                min-height: 500px !important;
+                padding: 10px !important;
+            }
+            .company-list-panel { 
+                display: block !important;
+                width: 100% !important;
+                background: rgba(15, 23, 42, 0.9) !important;
+                border-radius: 15px !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                margin-bottom: 20px !important;
+                overflow: visible !important;
+            }
+            .panel-header {
+                display: flex !important;
+                align-items: center !important;
+                gap: 15px !important;
+                padding: 20px 15px !important;
+                background: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, transparent 100%) !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+            }
+            .panel-header h4 {
+                color: var(--color-primary) !important;
+                font-size: 1.1rem !important;
+                font-weight: 700 !important;
+                margin: 0 !important;
+                text-transform: uppercase !important;
+            }
+            .search-container {
+                padding: 15px !important;
+                background: rgba(0,0,0,0.1) !important;
+            }
+            .search-input {
+                background: rgba(15, 23, 42, 0.6) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                height: 44px !important;
+                border-radius: 10px !important;
+                padding-left: 45px !important;
+                width: 100% !important;
+            }
+            .region-tabs {
+                padding: 15px !important;
+                background: transparent !important;
+                gap: 8px !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+            }
+            .region-tab {
+                background: rgba(255, 255, 255, 0.03) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                border-radius: 20px !important;
+                color: var(--color-text-muted) !important;
+                padding: 6px 14px !important;
+                font-size: 12px !important;
+                font-weight: 500 !important;
+            }
+            .region-tab.active {
+                background: var(--color-primary) !important;
+                color: #0f172a !important;
+                border-color: var(--color-primary) !important;
+            }
+            .map-container-inline {
+                width: 100% !important;
+                height: 250px !important;
+                margin: 15px 0 !important;
+                display: block !important;
+            }
+            #leafletMapMobile {
+                width: 100% !important;
+                height: 100% !important;
+                min-height: 220px !important;
+                border-radius: 10px !important;
+                z-index: 1 !important;
+            }
+            .company-cards { 
+                display: flex !important;
+                flex-direction: column !important;
+                padding: 15px !important;
+                gap: 12px !important;
+                height: auto !important;
+                max-height: 35vh !important; /* Better responsiveness for small screens */
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+            }
+            .company-card {
+                padding: var(--space-lg) !important;
+                background: rgba(255, 255, 255, 0.03) !important;
+                border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                border-left: 3px solid var(--color-primary) !important;
+                border-radius: var(--radius-md) !important;
+            }
+            .company-card p {
+                font-size: 13px !important;
+                color: rgba(255,255,255,0.6) !important;
+            }
+            
+            /* Visibility Overrides */
+            .mobile-only {
+                display: block !important;
+            }
+            .desktop-only {
+                display: none !important;
+            }
             
             /* Navigation */
-            .nav-controls { bottom: 10px; gap: 8px; }
-            .nav-btn { width: 38px; height: 38px; font-size: 1rem; }
-            .indicator-dot { width: 8px; height: 8px; }
-            .indicator-dot.active { width: 20px; }
-            
-            /* Stats and cards */
-            .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-            .stat-card { padding: 14px; }
-            .stat-value { font-size: 1.8rem; }
-            .stat-label { font-size: 0.9rem; }
-            
-            /* Highlight box */
-            .highlight-box h3 { font-size: 1.15rem; }
-            .highlight-box p { font-size: 1rem; }
-            
-            /* Key points */
-            .point-icon { width: 28px; height: 28px; font-size: 0.85rem; }
-            .point-text { font-size: 1rem; }
-            
-            /* Info cards */
-            .info-icon { width: 38px; height: 38px; font-size: 1.2rem; }
-            .info-text h4 { font-size: 1rem; }
-            .info-text p { font-size: 0.9rem; }
+            .nav-controls { 
+                bottom: 20px; 
+                background: rgba(15, 23, 42, 0.85); 
+                padding: 8px 16px; 
+                border-radius: 50px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(245, 158, 11, 0.15);
+                width: auto;
+            }
+            .region-tab { 
+                padding: 10px 18px; 
+                font-size: 0.95rem; 
+                font-weight: 600; 
+                border-radius: 25px; 
+                background: rgba(30, 41, 59, 0.6);
+                border: 1px solid rgba(148, 163, 184, 0.3);
+            }
+            .region-tab.active {
+                box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+                background: #f59e0b;
+                border-color: #f59e0b;
+                color: #1e293b;
+            }
+            .map-panel { min-height: 400px !important; }
+            .map-legend { padding: 12px; gap: 10px; border-radius: 12px; }
+            .legend-item { font-size: 0.8rem; }
             
             /* Tables */
-            .data-table { font-size: 0.95rem; }
-            
-            /* Charts - Tablet */
-            .chart-container { 
-                min-height: 220px; 
-                padding: 15px; 
+            .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+            .data-table { font-size: 0.85rem; min-width: 500px; }
+            .data-table th, .data-table td { padding: 10px 8px; }
+
+            /* Charts */
+            .chart-container { min-height: 220px; padding: 12px; margin-bottom: 5px; }
+            .pie-chart-container { 
+                flex-direction: row !important; 
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
             }
-            .chart-container canvas {
-                max-height: 200px !important;
+            .pie-chart-container canvas { 
+                max-width: 55% !important; 
+                max-height: 90% !important;
+            }
+            
+            /* Removed Speaker Notes CSS */
+            
+            /* Iframe (PDF) on Mobile */
+            iframe { min-height: 400px; border-radius: 8px; }
+
+            /* Fullscreen Prompt */
+            #fullscreenPrompt > div {
+                width: 90% !important;
+                padding: 30px 20px !important;
             }
         }
 
         @media (max-width: 480px) {
-            .slide { 
-                padding: 12px 15px 85px 15px; /* Extra padding at bottom for nav */
-            }
-            .slide-title { font-size: 1.4rem; }
-            .slide-subtitle { font-size: 0.85rem; }
-            .slide-number { font-size: 0.75rem; }
+            .slide { padding: 15px 15px 100px 15px; }
+            .slide-title { font-size: 1.5rem; letter-spacing: -0.02em; }
+            .slide-subtitle { font-size: 0.9rem; margin-top: 4px; }
             
-            /* Slide content stacking */
-            .slide-content { 
-                flex-direction: column; 
-                gap: 10px;
-            }
-            .content-left, .content-right { 
-                flex: none; 
-                width: 100%; 
-                min-height: auto;
-            }
-            
-            /* Charts - Mobile */
-            .chart-container { 
-                min-height: 180px; 
-                max-height: 220px;
-                padding: 12px; 
-                margin-bottom: 8px;
-            }
-            .chart-container canvas {
-                max-height: 160px !important;
-            }
-            
-            /* Stats Grid on Mobile - 2x2 compact */
-            .stats-grid { 
-                grid-template-columns: repeat(2, 1fr); 
-                gap: 6px; 
-                margin-bottom: 8px;
-            }
-            .stat-card { 
-                padding: 10px 8px; 
-            }
+            .stats-grid { gap: 10px !important; }
             .stat-value { font-size: 1.4rem; }
             .stat-label { font-size: 0.75rem; }
             
-            /* Map Section Mobile Small */
-            .map-section { min-height: 450px; }
-            .company-list-panel { max-height: 180px; min-height: 120px; }
-            .company-cards { max-height: 100px; min-height: 60px; overflow-y: auto; }
-            .company-card { padding: 8px; }
-            .company-card h5 { font-size: 0.85rem; }
-            .company-card p { font-size: 0.75rem; }
-            .region-tab { padding: 5px 8px; font-size: 0.75rem; }
+            .highlight-box { padding: 18px; border-radius: 14px; margin-bottom: 20px; }
+            .highlight-box h3 { font-size: 1.1rem; margin-bottom: 10px; }
+            .highlight-box p { font-size: 0.95rem; line-height: 1.6; }
             
-            .map-panel { height: 250px !important; min-height: 250px !important; }
-            .map-container { height: 230px !important; min-height: 230px !important; }
-            #leafletMap { height: 230px !important; min-height: 230px !important; }
+            .logo-img { height: 40px; }
+            .logo-img.large { height: 50px; }
+            .logo-row { gap: 12px !important; margin-bottom: 20px !important; }
             
-            .map-panel { min-height: 250px; }
-            .map-container { min-height: 200px; }
-            .map-legend { flex-wrap: wrap; gap: 8px; }
-            .legend-item { font-size: 0.8rem; }
+            .info-card { padding: 14px; gap: 14px; }
+            .info-icon { width: 44px; height: 44px; font-size: 1.3rem; }
+            .point-text { font-size: 0.95rem; }
             
-            /* Highlight box - Compact */
-            .highlight-box { padding: 12px; margin-bottom: 8px; }
-            .highlight-box h3 { font-size: 1rem; }
-            .highlight-box p { font-size: 0.85rem; line-height: 1.4; }
-            
-            /* Key points - Compact */
-            .key-points { padding: 12px; }
-            .key-point { padding: 0; margin-bottom: 8px; gap: 8px; }
-            .point-icon { width: 24px; height: 24px; font-size: 0.75rem; }
-            .point-text { font-size: 0.85rem; line-height: 1.4; }
-            
-            /* Info cards - Compact */
-            .info-cards { gap: 6px; }
-            .info-card { padding: 10px; gap: 8px; }
-            .info-icon { width: 32px; height: 32px; font-size: 1rem; }
-            .info-text h4 { font-size: 0.85rem; }
-            .info-text p { font-size: 0.75rem; }
-            
-            /* Tables - Compact */
-            .table-container { padding: 10px; }
-            .data-table { font-size: 0.8rem; }
-            .data-table th, .data-table td { padding: 6px 8px; }
-            .badge { font-size: 0.6rem; padding: 2px 6px; }
-            
-            /* Closing slide */
-            .closing-title { font-size: 1.4rem; }
-            .closing-text { font-size: 0.85rem; max-width: 100%; }
-            .closing-stats { 
-                gap: 10px; 
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .closing-stat { 
-                padding: 10px 15px; 
-                min-width: 70px;
-            }
-            .closing-stat-value { font-size: 1.4rem; }
-            .closing-stat-label { font-size: 0.7rem; }
-            
-            /* Navigation on mobile */
-            .nav-controls { bottom: 8px; }
-            .nav-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+            .nav-controls { bottom: 12px; padding: 6px 12px; }
+            .nav-btn { width: 38px; height: 38px; font-size: 1rem; }
         }
 
         /* Extra small screens (below 360px) */
         @media (max-width: 360px) {
-            .slide { padding: 10px 12px; }
+            .slide { padding: 10px 10px; }
             .slide-title { font-size: 1.2rem; }
             .slide-subtitle { font-size: 0.75rem; }
+            .slide-number { font-size: 0.7rem; }
             
-            .chart-container { 
-                min-height: 150px; 
-                max-height: 180px;
-                padding: 10px;
-            }
-            .chart-container canvas {
-                max-height: 130px !important;
-            }
+            .main-title { font-size: 1.2rem; }
+            .sub-title { font-size: 0.9rem; }
             
-            .stats-grid { gap: 5px; }
-            .stat-card { padding: 8px 6px; }
-            .stat-value { font-size: 1.2rem; }
-            .stat-label { font-size: 0.65rem; }
+            .stat-value { font-size: 1.1rem; }
+            .stat-label { font-size: 0.6rem; }
             
-            .highlight-box { padding: 10px; }
-            .highlight-box h3 { font-size: 0.9rem; }
-            .highlight-box p { font-size: 0.75rem; }
-            
-            .key-point { margin-bottom: 6px; }
-            .point-icon { width: 20px; height: 20px; font-size: 0.65rem; }
-            .point-text { font-size: 0.75rem; }
+            .point-text { font-size: 0.8rem; }
+            .info-card h4 { font-size: 0.8rem; }
+            .info-card p { font-size: 0.7rem; }
+            .data-table { font-size: 0.75rem; }
             
             .info-card { padding: 8px; gap: 6px; }
             .info-icon { width: 28px; height: 28px; font-size: 0.9rem; }
@@ -462,9 +1822,9 @@
 
     <div class="presentation">
         <!-- SLIDE 1: Opening with Logos & Cover -->
-        <div class="slide slide-opening active" data-notes="Assalamualaikum Wr. Wb. Selamat datang di acara sosialisasi PKL Tahun 2026. Presentasi ini menyajikan hasil survei dari 141 Peserta Didik Kelas XI Teknik Mesin.">
+        <div class="slide slide-opening active">
             <div>
-                <div class="slide-number">SLIDE 1 dari 17</div>
+                <div class="slide-number">SLIDE 1 dari 18</div>
                 <div class="logo-row">
                     <img src="logo_tutwuri.webp" alt="Tut Wuri Handayani" class="logo-img">
                     <img src="logo_smkn2.webp" alt="SMKN 2 Tasikmalaya" class="logo-img large">
@@ -479,9 +1839,9 @@
         </div>
 
         <!-- SLIDE 2: Pembukaan & Visi Bersama dengan Video -->
-        <div class="slide" data-notes="Sapa Peserta Didik dengan semangat. Jelaskan tujuan persiapan PKL ini untuk masa depan mereka.">
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 2 dari 17</div>
+                <div class="slide-number">SLIDE 2 dari 18</div>
                 <h2 class="slide-title">🙏 Assalamualaikum Wr. Wb.</h2>
                 <p class="slide-subtitle">Selamat Datang Peserta Didik Teknik Mesin di Sosialisasi Persiapan PKL 2026</p>
             </div>
@@ -492,7 +1852,8 @@
                         <div style="flex: 1; background: #0f172a; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative;">
                             <!-- Video from Google Drive - iframe embed -->
                             <iframe 
-                                src="https://drive.google.com/file/d/1YlT9R1uKU3bP6bO5FTa-VQc08ECUA5FX/preview" 
+                                data-src="https://drive.google.com/file/d/1YlT9R1uKU3bP6bO5FTa-VQc08ECUA5FX/preview" 
+                                src="about:blank"
                                 width="100%" 
                                 height="100%" 
                                 style="border: none; border-radius: 12px;"
@@ -520,9 +1881,9 @@
         </div>
 
         <!-- SLIDE 3: Apa itu PKL & Perbedaan dengan Magang -->
-        <div class="slide" data-notes="PKL adalah mata pelajaran wajib SMK yang dilaksanakan di dunia kerja. Berbeda dengan magang yang ditujukan untuk masyarakat umum.">
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 3 dari 17</div>
+                <div class="slide-number">SLIDE 3 dari 18</div>
                 <h2 class="slide-title">📋 Apa itu PKL?</h2>
                 <p class="slide-subtitle">Praktik Kerja Lapangan & Perbedaan dengan Magang</p>
             </div>
@@ -561,9 +1922,9 @@
         </div>
 
         <!-- SLIDE 4: Manfaat PKL -->
-        <div class="slide" data-notes="PKL memberikan manfaat besar bagi Peserta Didik, sekolah, dan industri. Peserta Didik akan mendapat pengalaman nyata di dunia industri yang sesungguhnya.">
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 4 dari 17</div>
+                <div class="slide-number">SLIDE 4 dari 18</div>
                 <h2 class="slide-title">🎯 Manfaat PKL</h2>
                 <p class="slide-subtitle">Keuntungan bagi Peserta Didik, Sekolah, dan Industri</p>
             </div>
@@ -598,154 +1959,10 @@
             </div>
         </div>
 
-        <!-- SLIDE 5: Timeline & Prosedur PKL -->
-        <div class="slide" data-notes="PKL dilaksanakan 3 Juni - 30 September 2026 (4 bulan). Tahapan meliputi perencanaan, penempatan, pembekalan, pelaksanaan, dan penilaian.">
+        <!-- SLIDE 5: Tata Tertib PKL (DIPINDAHKAN) -->
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 5 dari 17</div>
-                <h2 class="slide-title">📅 Timeline & Prosedur PKL 2026</h2>
-                <p class="slide-subtitle">Tahapan Pelaksanaan Praktik Kerja Lapangan</p>
-            </div>
-            <div class="slide-content" style="flex-direction: column; gap: 15px;">
-                <div class="highlight-box" style="text-align: center; padding: 15px;">
-                    <h3 style="font-size: 1.4rem; margin-bottom: 5px;">⏰ PERIODE PELAKSANAAN PKL</h3>
-                    <p style="font-size: 1.6rem; font-weight: 700; color: #f59e0b;">3 JUNI 2026 - 30 SEPTEMBER 2026</p>
-                    <p style="font-size: 1rem; color: #94a3b8;">(Durasi: 4 Bulan / 17 Minggu)</p>
-                </div>
-                <div style="display: flex; gap: 10px; flex: 1; align-items: stretch;">
-                    <!-- Timeline Cards -->
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(139, 92, 246, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(139, 92, 246, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); margin-bottom: 8px;">📋</div>
-                        <h4 style="color: #8b5cf6; margin-bottom: 5px;">1. PERENCANAAN</h4>
-                        <p style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.3;">Sekolah mengidentifikasi mitra, menyusun TP & ATP</p>
-                    </div>
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(59, 130, 246, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(59, 130, 246, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb); margin-bottom: 8px;">🔍</div>
-                        <h4 style="color: #3b82f6; margin-bottom: 5px; font-size: 1.1rem;">2. PENEMPATAN</h4>
-                        <p style="font-size: 0.95rem; color: #94a3b8; font-weight: 600;">19 Jan - 15 Mei 2026</p>
-                        <p style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.3;">Peserta Didik mencari dan mengajukan tempat PKL</p>
-                    </div>
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(16, 185, 129, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #10b981, #059669); margin-bottom: 8px;">📚</div>
-                        <h4 style="color: #10b981; margin-bottom: 5px; font-size: 1.1rem;">3. PEMBEKALAN</h4>
-                        <p style="font-size: 0.95rem; color: #94a3b8; font-weight: 600;">Mei 2026</p>
-                        <p style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.3;">Orientasi budaya kerja, K3LH, dan SOP industri</p>
-                    </div>
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(245, 158, 11, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(245, 158, 11, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706); margin-bottom: 8px;">🔧</div>
-                        <h4 style="color: #f59e0b; margin-bottom: 5px; font-size: 1.1rem;">4. PELAKSANAAN</h4>
-                        <p style="font-size: 0.95rem; color: #94a3b8; font-weight: 600;">3 Juni - 30 Sept 2026</p>
-                        <p style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.3;">Peserta Didik bekerja di industri dengan bimbingan khusus</p>
-                    </div>
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(236, 72, 153, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(236, 72, 153, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #ec4899, #db2777); margin-bottom: 8px;">📊</div>
-                        <h4 style="color: #ec4899; margin-bottom: 5px; font-size: 1.1rem;">5. PENILAIAN</h4>
-                        <p style="font-size: 0.95rem; color: #94a3b8; font-weight: 600;">Oktober 2026</p>
-                        <p style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.3;">Asesmen oleh instruktur industri dan penguji sekolah</p>
-                    </div>
-                </div>
-                <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
-                    <div class="stat-card"><div class="stat-value" style="font-size: 1.4rem;">70%</div><div class="stat-label">Nilai dari Industri</div></div>
-                    <div class="stat-card"><div class="stat-value" style="font-size: 1.4rem;">30%</div><div class="stat-label">Nilai dari Sekolah</div></div>
-                    <div class="stat-card"><div class="stat-value" style="font-size: 1.4rem;">📜</div><div class="stat-label">Sertifikat Industri</div></div>
-                    <div class="stat-card"><div class="stat-value" style="font-size: 1.4rem;">📋</div><div class="stat-label">Jurnal Harian</div></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SLIDE 6: Alur Pengajuan Tempat PKL -->
-        <div class="slide" data-notes="Peserta Didik wajib mengikuti alur pengajuan tempat PKL yang sudah ditetapkan ini. Pastikan setiap tahapan dilakukan dengan teliti.">
-            <div class="slide-header">
-                <div class="slide-number">SLIDE 6 dari 17</div>
-                <h2 class="slide-title">📝 Alur Pengajuan Tempat PKL</h2>
-                <p class="slide-subtitle">Langkah-langkah Mengajukan Tempat Praktik Kerja Lapangan</p>
-            </div>
-            <div class="slide-content" style="flex-direction: column; gap: 15px;">
-                <div class="highlight-box" style="text-align: center; padding: 12px;">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 5px;">📅 Periode Pengajuan: 24 Februari - 16 Mei 2026</h3>
-                </div>
-                <div style="display: flex; gap: 10px; flex: 1; align-items: stretch;">
-                    <!-- Step 1 -->
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(59, 130, 246, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(59, 130, 246, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb); margin-bottom: 8px; width: 45px; height: 45px; font-size: 1.3rem;">1️⃣</div>
-                        <h4 style="color: #3b82f6; margin-bottom: 5px; font-size: 1.15rem;">CARI TEMPAT PKL</h4>
-                        <ul style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.4; text-align: left; padding-left: 15px; margin: 0;">
-                            <li>Cari informasi tempat PKL dari Kakak Kelas, Alumni, Sekolah atau secara Mandiri</li>
-                        </ul>
-                    </div>
-                    <!-- Step 2 -->
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(16, 185, 129, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #10b981, #059669); margin-bottom: 8px; width: 45px; height: 45px; font-size: 1.3rem;">2️⃣</div>
-                        <h4 style="color: #10b981; margin-bottom: 5px; font-size: 0.95rem;">AJUKAN KE KOORDINATOR</h4>
-                        <ul style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.4; text-align: left; padding-left: 15px; margin: 0;">
-                            <li>Isi form usulan tempat PKL</li>
-                            <li>Ajukan ke Wali Kelas dan Koordinator PKL atau Pembimbing Program untuk verifikasi</li>
-                            <li>Minta TTD Ketua Program keahlian Teknik Mesin</li>
-                            <li>Serahkan form usulan warna putih ke Koordinator PKL dan form usulan warna kuning ke Pokja PKL</li>
-                        </ul>
-                    </div>
-                    <!-- Step 3 -->
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(245, 158, 11, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(245, 158, 11, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706); margin-bottom: 8px; width: 45px; height: 45px; font-size: 1.3rem;">3️⃣</div>
-                        <h4 style="color: #f59e0b; margin-bottom: 5px; font-size: 1.15rem;">AJUKAN KE POKJA PKL</h4>
-                        <ul style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.4; text-align: left; padding-left: 15px; margin: 0;">
-                            <li>Cek kelayakan industri</li>
-                            <li>Cek kesesuaian kompetensi</li>
-                            <li>Pembuatan surat permohonan resmi dari Pokja PKL sesuai usulan</li>
-                        </ul>
-                    </div>
-                    <!-- Step 4 -->
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(139, 92, 246, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(139, 92, 246, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); margin-bottom: 8px; width: 45px; height: 45px; font-size: 1.3rem;">4️⃣</div>
-                        <h4 style="color: #8b5cf6; margin-bottom: 5px; font-size: 1.15rem;">PEMBUATAN SURAT PERMOHONAN</h4>
-                        <ul style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.4; text-align: left; padding-left: 15px; margin: 0;">
-                            <li>Scan surat permohonan</li>
-                            <li>Kirimkan surat ke perusahaan yang dituju melalui email</li>
-                            <li>Tunggu surat balasan dari perusahaan yang dituju</li>
-                        </ul>
-                    </div>
-                    <!-- Step 5 -->
-                    <div class="info-card" style="flex: 1; flex-direction: column; text-align: center; background: linear-gradient(145deg, rgba(236, 72, 153, 0.2), rgba(30, 41, 59, 0.9)); border-color: rgba(236, 72, 153, 0.3);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #ec4899, #db2777); margin-bottom: 8px; width: 45px; height: 45px; font-size: 1.3rem;">5️⃣</div>
-                        <h4 style="color: #ec4899; margin-bottom: 5px; font-size: 1.15rem;">PEMBUATAN SURAT PENGANTAR</h4>
-                        <ul style="font-size: 1.1rem; color: #e2e8f0; line-height: 1.4; text-align: left; padding-left: 15px; margin: 0;">
-                            <li>Penerbitan surat pengantar oleh Pokja PKL</li>
-                            <li>Scan surat pengantar dan bawa berkas aslinya ketika awal masuk PKL sesuai timeline</li>
-                            <li>Jika perusahaan menolak surat permohonan, ajukan kembali sesuai prosedur atau alur pengajuan.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="highlight-box" style="padding: 15px; border-left: 5px solid #ef4444; background: rgba(239, 68, 68, 0.1);">
-                    <h4 style="color: #ef4444; margin-bottom: 8px; font-size: 1.2rem;">⚠️ Catatan Penting: Zero Pungli</h4>
-                    <p style="font-size: 1.1rem; line-height: 1.5; color: #e2e8f0; margin: 0;">
-                        Seluruh proses pendaftaran dan pelaksanaan PKL <strong>bebas dari segala jenis pungutan liar</strong>. 
-                        Laporkan segera ke pihak sekolah jika ada oknum yang meminta imbalan uang atau barang 
-                        dengan alasan apa pun selama proses PKL berlangsung.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- SLIDE 7: Isi Jurnal Harian -->
-        <div class="slide" data-notes="Jurnal harian wajib diisi setiap hari selama PKL. Pastikan Peserta Didik mencatat aktivitas yang relevan dengan kompetensi keahlian. Lihat contoh format pada PDF berikut.">
-            <div class="slide-header">
-                <div class="slide-number">SLIDE 7 dari 17</div>
-                <h2 class="slide-title">📖 Isi Jurnal Harian PKL</h2>
-                <p class="slide-subtitle">Panduan Pengisian Laporan Aktivitas Harian</p>
-            </div>
-            <div class="slide-content" style="flex-direction: column; gap: 10px;">
-                <div class="highlight-box" style="padding: 10px; margin-bottom: 5px; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981;">
-                    <p style="font-size: 1rem; margin: 0;"><strong>Instruksi:</strong> Catat aktivitas harian secara detail, mintalah tanda tangan pembimbing industri setiap minggu.</p>
-                </div>
-                <div style="flex: 1; width: 100%; min-height: 450px; background: #0f172a; border-radius: 12px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.2);">
-                    <iframe src="ISI JURNAL HARIAN.pdf" width="100%" height="100%" style="border: none;"></iframe>
-                </div>
-            </div>
-        </div>
-
-        <!-- SLIDE 8: Tata Tertib PKL -->
-        <div class="slide" data-notes="Peserta Didik wajib mematuhi tata tertib PKL baik dari sekolah maupun industri. Pelanggaran dapat berakibat sanksi hingga dikeluarkan dari sekolah.">
-            <div class="slide-header">
-                <div class="slide-number">SLIDE 8 dari 17</div>
+                <div class="slide-number">SLIDE 5 dari 18</div>
                 <h2 class="slide-title">📜 Tata Tertib PKL</h2>
                 <p class="slide-subtitle">Aturan yang Wajib Dipatuhi Selama Melaksanakan PKL</p>
             </div>
@@ -785,16 +2002,227 @@
             </div>
         </div>
 
-        <!-- SLIDE 9: Rencana Karir -->
-        <div class="slide" data-notes="90,8% atau 128 dari Peserta Didik ingin langsung bekerja setelah lulus. Praktik Kerja Lapangan menjadi sangat krusial sebagai pintu gerbang pertama langkah karir Peserta Didik.">
+        <!-- SLIDE 6: Timeline & Prosedur PKL -->
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 9 dari 17</div>
-                <h2 class="slide-title">Cita-Cita Setelah Lulus SMK</h2>
-                <p class="slide-subtitle">Rencana Masa Depan Peserta Didik</p>
+                <div class="slide-number">SLIDE 6 dari 18</div>
+                <h2 class="slide-title">📅 Timeline & Prosedur PKL 2026</h2>
+                <p class="slide-subtitle">Tahapan Pelaksanaan Praktik Kerja Lapangan</p>
+            </div>
+            <div class="slide-content" style="flex-direction: column; gap: 15px;">
+                <div class="highlight-box" style="text-align: center; padding: 15px;">
+                    <h3 style="font-size: 1.4rem; margin-bottom: 5px;">⏰ PERIODE PELAKSANAAN PKL</h3>
+                    <p style="font-size: 1.6rem; font-weight: 700; color: #f59e0b;">3 JUNI 2026 - 30 SEPTEMBER 2026</p>
+                    <p style="font-size: 1rem; color: #94a3b8;">(Durasi: 4 Bulan / 17 Minggu)</p>
+                </div>
+                <div class="timeline-container">
+                    <!-- Timeline Cards -->
+                    <div class="timeline-card purple">
+                        <div class="timeline-step">📋</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">1. PERENCANAAN</h4>
+                            <ul class="timeline-list">
+                                <li>Identifikasi mitra industri</li>
+                                <li>Penyusunan TP & ATP</li>
+                                <li>Koordinasi Pokja PKL</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="timeline-card blue">
+                        <div class="timeline-step">🔍</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">2. PENEMPATAN</h4>
+                            <span class="timeline-date">19 Jan - 15 Mei 2026</span>
+                            <ul class="timeline-list">
+                                <li>Cari tempat PKL</li>
+                                <li>Ajukan ke koordinator</li>
+                                <li>Proses permohonan surat</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="timeline-card green">
+                        <div class="timeline-step">📚</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">3. PEMBEKALAN</h4>
+                            <span class="timeline-date">Mei 2026</span>
+                            <ul class="timeline-list">
+                                <li>Orientasi budaya kerja</li>
+                                <li>Materi K3LH industri</li>
+                                <li>SOP praktik kerja</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="timeline-card orange">
+                        <div class="timeline-step">🔧</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">4. PELAKSANAAN</h4>
+                            <span class="timeline-date">3 Juni - 30 Sept 2026</span>
+                            <ul class="timeline-list">
+                                <li>Praktik kerja di industri</li>
+                                <li>Isi jurnal harian</li>
+                                <li>Bimbingan instruktur</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="timeline-card pink">
+                        <div class="timeline-step">📊</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">5. PENILAIAN</h4>
+                            <span class="timeline-date">Oktober 2026</span>
+                            <ul class="timeline-list">
+                                <li>Asesmen instruktur industri</li>
+                                <li>Pengujian sekolah</li>
+                                <li>Penerbitan sertifikat</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 20px;">
+                    <div class="stat-card" style="padding: 15px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);"><div class="stat-value" style="color: #10b981;">70%</div><div class="stat-label">Industri</div></div>
+                    <div class="stat-card" style="padding: 15px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2);"><div class="stat-value" style="color: #3b82f6;">30%</div><div class="stat-label">Sekolah</div></div>
+                    <div class="stat-card" style="padding: 15px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2);"><div class="stat-value">📜</div><div class="stat-label">Sertifikat</div></div>
+                    <div class="stat-card" style="padding: 15px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2);"><div class="stat-value">📋</div><div class="stat-label">Jurnal</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: Alur Pengajuan Tempat PKL -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-number">SLIDE 7 dari 18</div>
+                <h2 class="slide-title">📝 Alur Pengajuan Tempat PKL</h2>
+                <p class="slide-subtitle">Langkah-langkah Mengajukan Tempat Praktik Kerja Lapangan</p>
+            </div>
+            <div class="slide-content" style="flex-direction: column; gap: 15px;">
+                <div class="highlight-box" style="text-align: center; padding: 12px;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 5px;">📅 Periode Pengajuan: 19 Jan - 15 Mei 2026</h3>
+                </div>
+                <div class="timeline-container">
+                    <!-- Step 1 -->
+                    <div class="timeline-card blue">
+                        <div class="timeline-step">1</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">IDENTIFIKASI TEMPAT PKL</h4>
+                            <ul class="flow-steps">
+                                <li>Cari informasi dari kakak kelas, alumni, sekolah atau secara mandiri</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="timeline-card green">
+                        <div class="timeline-step">2</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">AJUKAN KE KOORDINATOR PKL</h4>
+                            <ul class="flow-steps">
+                                <li>Ambil form usulan di Koordinator PKL dan isi form sesuai data yang diminta</li>
+                                <li>Ajukan dan verifikasi oleh Wali Kelas serta minta tanda tangan</li>
+                                <li>Serahkan ke Koordinator PKL untuk verifikasi tempat PKL</li>
+                                <li>Setelah disetujui, minta tanda tangan Koordinator PKL dan Ketua Program Keahlian</li>
+                                <li>Kumpulkan form usulan ke Koordinator PKL untuk penerbitan Surat Permohonan</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="timeline-card orange">
+                        <div class="timeline-step">3</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">PROSES DI POKJA PKL</h4>
+                            <ul class="flow-steps">
+                                <li>Verifikasi dan input data peserta didik serta tempat PKL</li>
+                                <li>Pembuatan Surat Permohonan PKL</li>
+                                <li>Surat Permohonan PKL diberikan ke Koordinator PKL</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="timeline-card purple">
+                        <div class="timeline-step">4</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">KIRIM SURAT PERMOHONAN</h4>
+                            <ul class="flow-steps">
+                                <li>Surat Permohonan bisa diambil di Koordinator PKL</li>
+                                <li>Scan surat permohonan</li>
+                                <li>Kirim via email/langsung/Pos</li>
+                                <li>Tunggu Konfirmasi balasan</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Step 5 -->
+                    <div class="timeline-card pink">
+                        <div class="timeline-step">5</div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-title">SURAT PENGANTAR PKL</h4>
+                            <ul class="flow-steps">
+                                <li>Konfirmasi Balasan dari Perusahaan jika diterima ke Koordinator PKL</li>
+                                <li>Pembuatan Surat Pengantar oleh Pokja PKL</li>
+                                <li>Surat Pengantar bisa diambil di Koordinator PKL</li>
+                                <li>Siap mulai PKL dan bawa surat pengantar ke tempat PKL</li>
+                                <li>Jika peserta didik tidak dinyatakan diterima, ulangi lagi alur atau prosedur pengajuan PKL</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="highlight-box" style="padding: 15px; border-left: 5px solid #ef4444; background: rgba(239, 68, 68, 0.1);">
+                    <h4 style="color: #ef4444; margin-bottom: 8px; font-size: 1.2rem;">⚠️ Catatan Penting: Zero Pungli</h4>
+                    <p style="font-size: 1.1rem; line-height: 1.5; color: #e2e8f0; margin: 0;">
+                        Seluruh proses pendaftaran dan pelaksanaan PKL <strong>bebas dari segala jenis pungutan liar</strong>. 
+                        Laporkan segera ke pihak sekolah jika ada oknum yang meminta imbalan uang atau barang 
+                        dengan alasan apa pun selama proses PKL berlangsung.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: Form Usulan Tempat PKL (BARU) -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-number">SLIDE 8 dari 18</div>
+                <h2 class="slide-title">📋 Form Usulan Tempat PKL</h2>
+                <p class="slide-subtitle">Contoh Formulir Pengajuan Tempat Praktik Kerja Lapangan</p>
+            </div>
+            <div class="slide-content">
+                <div class="content-left" style="display: flex; align-items: center; justify-content: center;">
+                    <div style="background: rgba(30, 41, 59, 0.8); border-radius: 16px; padding: 20px; border: 1px solid rgba(148, 163, 184, 0.2);">
+                        <h4 style="color: #f59e0b; margin-bottom: 15px; text-align: center; font-size: 1rem;">📄 Form Usulan - Halaman 1</h4>
+                        <img src="form_usulan1.jpeg" alt="Form Usulan PKL Halaman 1" style="max-width: 100%; max-height: 450px; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+                    </div>
+                </div>
+                <div class="content-right" style="display: flex; align-items: center; justify-content: center;">
+                    <div style="background: rgba(30, 41, 59, 0.8); border-radius: 16px; padding: 20px; border: 1px solid rgba(148, 163, 184, 0.2);">
+                        <h4 style="color: #f59e0b; margin-bottom: 15px; text-align: center; font-size: 1rem;">📄 Form Usulan - Halaman 2</h4>
+                        <img src="form_usulan2.jpeg" alt="Form Usulan PKL Halaman 2" style="max-width: 100%; max-height: 450px; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 9: Isi Jurnal Harian -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-number">SLIDE 9 dari 18</div>
+                <h2 class="slide-title">📖 Isi Jurnal Harian PKL</h2>
+                <p class="slide-subtitle">Panduan Pengisian Laporan Aktivitas Harian</p>
+            </div>
+            <div class="slide-content" style="flex-direction: column; gap: 10px;">
+                <div class="highlight-box" style="padding: 10px; margin-bottom: 5px; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981;">
+                    <p style="font-size: 1rem; margin: 0;"><strong>Instruksi:</strong> Catat aktivitas harian secara detail, mintalah tanda tangan pembimbing industri setiap minggu.</p>
+                </div>
+                <div style="flex: 1; width: 100%; min-height: 450px; background: #0f172a; border-radius: 12px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.2);">
+                    <iframe data-src="ISI JURNAL HARIAN.pdf" src="about:blank" width="100%" height="100%" style="border: none;"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 10: Orientasi Karir Pasca Lulus -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-number">SLIDE 10 dari 18 • 📊 HASIL SURVEI KESIAPAN PKL</div>
+                <h2 class="slide-title">🎯 Orientasi Karir Pasca Lulus</h2>
+                <p class="slide-subtitle">Rencana Masa Depan Peserta Didik Setelah Lulus SMK</p>
             </div>
             <div class="slide-content">
                 <div class="content-left">
-                    <div class="chart-container"><canvas id="careerChart"></canvas></div>
+                    <div class="chart-container pie-chart-container"><canvas id="careerChart"></canvas></div>
                 </div>
                 <div class="content-right">
                     <div class="highlight-box">
@@ -817,12 +2245,12 @@
             </div>
         </div>
 
-        <!-- SLIDE 10: Wilayah PKL -->
-        <div class="slide" data-notes="42,5% memilih PKL di Kota Tasikmalaya. 57,5% memilih luar kota. Ini peluang besar bagi Peserta Didik untuk belajar mandiri di kota industri.">
+        <!-- SLIDE 11: Peta Sebaran Wilayah PKL -->
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 10 dari 17</div>
-                <h2 class="slide-title">Kemana Peserta Didik Akan PKL?</h2>
-                <p class="slide-subtitle">Sebaran Wilayah Penempatan Praktik Kerja Lapangan</p>
+                <div class="slide-number">SLIDE 11 dari 18 • 📊 HASIL SURVEI KESIAPAN PKL</div>
+                <h2 class="slide-title">🗺️ Peta Sebaran Wilayah PKL</h2>
+                <p class="slide-subtitle">Distribusi Penempatan Praktik Kerja Lapangan Berdasarkan Lokasi</p>
             </div>
             <div class="slide-content">
                 <div class="content-left">
@@ -850,12 +2278,12 @@
             </div>
         </div>
 
-        <!-- SLIDE 11: Kesiapan -->
-        <div class="slide" data-notes="84,4% dari Peserta Didik sudah punya rencana tempat PKL. 94,3% siap melanjutkan magang. Luar biasa, Peserta Didik sangat proaktif!">
+        <!-- SLIDE 12: Tingkat Kesiapan & Sumber Informasi -->
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 11 dari 17</div>
-                <h2 class="slide-title">Apakah Peserta Didik Sudah Siap?</h2>
-                <p class="slide-subtitle">Status Kesiapan Tempat PKL & Magang</p>
+                <div class="slide-number">SLIDE 12 dari 18 • 📊 HASIL SURVEI KESIAPAN PKL</div>
+                <h2 class="slide-title">✅ Tingkat Kesiapan & Sumber Informasi</h2>
+                <p class="slide-subtitle">Status Persiapan Tempat PKL dan Asal Informasi Peserta Didik</p>
             </div>
             <div class="slide-content">
                 <div class="content-left">
@@ -863,7 +2291,7 @@
                         <div class="stat-card"><div class="stat-value">84.4%</div><div class="stat-label">Sudah Punya Rencana</div></div>
                         <div class="stat-card"><div class="stat-value">94.3%</div><div class="stat-label">Siap Lanjut Magang</div></div>
                     </div>
-                    <div class="chart-container"><canvas id="readinessChart"></canvas></div>
+                    <div class="chart-container pie-chart-container"><canvas id="readinessChart"></canvas></div>
                 </div>
                 <div class="content-right">
                     <div class="highlight-box">
@@ -882,12 +2310,12 @@
             </div>
         </div>
 
-        <!-- SLIDE 12: Kompetensi -->
-        <div class="slide" data-notes="73% atau 103 dari Peserta Didik menguasai Bubut Konvensional. Ini modal yang sangat berharga di manufaktur.">
+        <!-- SLIDE 13: Profil Kompetensi Teknis -->
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 12 dari 17</div>
-                <h2 class="slide-title">Keahlian Apa yang Peserta Didik Kuasai?</h2>
-                <p class="slide-subtitle">Kompetensi Teknik yang Diminati & Dikuasai</p>
+                <div class="slide-number">SLIDE 13 dari 18 • 📊 HASIL SURVEI KESIAPAN PKL</div>
+                <h2 class="slide-title">🔧 Profil Kompetensi Teknis</h2>
+                <p class="slide-subtitle">Keahlian yang Diminati dan Dikuasai Peserta Didik</p>
             </div>
             <div class="slide-content">
                 <div class="content-left">
@@ -909,17 +2337,17 @@
             </div>
         </div>
 
-        <!-- SLIDE 13: Logistik -->
-        <div class="slide" data-notes="50,4% dari Peserta Didik akan ngekost. Siapkan fisik dan budget logistik dengan baik demi kelancaran PKL Peserta Didik.">
+        <!-- SLIDE 14: Estimasi Biaya & Persiapan Praktis -->
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 13 dari 17</div>
-                <h2 class="slide-title">Persiapan Praktis untuk PKL</h2>
-                <p class="slide-subtitle">Rencana Tempat Tinggal & Transportasi Peserta Didik</p>
+                <div class="slide-number">SLIDE 14 dari 18 • 📊 HASIL SURVEI KESIAPAN PKL</div>
+                <h2 class="slide-title">💰 Estimasi Biaya & Persiapan Praktis</h2>
+                <p class="slide-subtitle">Rencana Tempat Tinggal, Transportasi, dan Anggaran Bulanan</p>
             </div>
             <div class="slide-content">
                 <div class="content-left">
-                    <div class="chart-container" style="margin-bottom: 12px;"><canvas id="accommodationChart"></canvas></div>
-                    <div class="chart-container"><canvas id="transportChart"></canvas></div>
+                    <div class="chart-container pie-chart-container" style="margin-bottom: 12px;"><canvas id="accommodationChart"></canvas></div>
+                    <div class="chart-container pie-chart-container"><canvas id="transportChart"></canvas></div>
                 </div>
                 <div class="content-right">
                     <div class="highlight-box">
@@ -944,20 +2372,20 @@
         </div>
 
         <!-- SLIDE 14: Daftar Perusahaan dengan Tabs -->
-        <div class="slide" data-notes="Jangan bingung mencari tempat! Sekolah sudah siapkan 75 perusahaan mitra untuk Peserta Didik pilih. Klik tab wilayah untuk detailnya.">
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 14 dari 17</div>
+                <div class="slide-number">SLIDE 15 dari 18</div>
                 <h2 class="slide-title">Daftar Lengkap 75 Perusahaan Mitra PKL</h2>
                 <p class="slide-subtitle">Klik tab wilayah untuk melihat daftar perusahaan</p>
             </div>
             <div class="slide-content" style="flex-direction: column; gap: 10px;">
                 <!-- Region Tabs -->
                 <div class="region-tabs" id="companyTabs" style="justify-content: center;">
-                    <button class="region-tab active" onclick="showCompanyTab('bandung')">🟡 Bandung (27)</button>
-                    <button class="region-tab" onclick="showCompanyTab('bekasi')">🔵 Bekasi (23)</button>
-                    <button class="region-tab" onclick="showCompanyTab('tasik')">🟢 Tasikmalaya (20)</button>
-                    <button class="region-tab" onclick="showCompanyTab('ciamis')">🟣 Ciamis (6)</button>
-                    <button class="region-tab" onclick="showCompanyTab('karawang')">🟠 Karawang (3)</button>
+                    <button class="region-tab active" onclick="showCompanyTab('bandung')">Bandung (27)</button>
+                    <button class="region-tab" onclick="showCompanyTab('bekasi')">Bekasi (23)</button>
+                    <button class="region-tab" onclick="showCompanyTab('tasik')">Tasikmalaya (20)</button>
+                    <button class="region-tab" onclick="showCompanyTab('ciamis')">Ciamis (6)</button>
+                    <button class="region-tab" onclick="showCompanyTab('karawang')">Karawang (3)</button>
                 </div>
                 <!-- Company Tables -->
                 <div class="content-full" style="overflow: auto;">
@@ -1095,27 +2523,45 @@
         </div>
 
         <!-- SLIDE 15: Peta Interaktif -->
-        <div class="slide" data-notes="Klik pada card perusahaan untuk melihat lokasi di peta. Perusahaan mitra Peserta Didik tersebar di Bandung, Bekasi, Karawang, dan lainnya.">
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 15 dari 17</div>
-                <h2 class="slide-title">📍 Peta Lokasi Perusahaan Mitra</h2>
+                <div class="slide-number">SLIDE 16 dari 18</div>
+                <h2 class="slide-title">Peta Lokasi Perusahaan Mitra</h2>
                 <p class="slide-subtitle">Klik pada card perusahaan untuk melihat lokasi di peta</p>
             </div>
             <div class="slide-content">
                 <div class="map-section">
-                    <div class="company-list-panel">
+                    <div class="company-list-panel expanded" id="companyListPanel">
+                        <div class="panel-header" onclick="toggleCompanyPanel()">
+                            <h4>📋 Daftar Perusahaan</h4>
+                            <button class="panel-toggle">▼</button>
+                        </div>
+                        <div class="search-container">
+                            <input type="search" class="search-input" id="companySearch" placeholder="Cari perusahaan..." oninput="searchCompanies(this.value)">
+                        </div>
                         <div class="region-tabs" id="mapTabs">
                             <button class="region-tab active" onclick="filterCompanies('all')">Semua (75)</button>
-                            <button class="region-tab" onclick="filterCompanies('Bandung')">🟡 Bandung (25)</button>
-                            <button class="region-tab" onclick="filterCompanies('Cimahi')">🟡 Cimahi (2)</button>
-                            <button class="region-tab" onclick="filterCompanies('Bekasi')">🔵 Bekasi (20)</button>
-                            <button class="region-tab" onclick="filterCompanies('Tasikmalaya')">🟢 Tasikmalaya (19)</button>
-                            <button class="region-tab" onclick="filterCompanies('Ciamis')">🟣 Ciamis (5)</button>
-                            <button class="region-tab" onclick="filterCompanies('Karawang')">🟠 Karawang (3)</button>
+                            <button class="region-tab" onclick="filterCompanies('Bandung')">Bandung (25)</button>
+                            <button class="region-tab" onclick="filterCompanies('Cimahi')">Cimahi (2)</button>
+                            <button class="region-tab" onclick="filterCompanies('Bekasi')">Bekasi (20)</button>
+                            <button class="region-tab" onclick="filterCompanies('Tasikmalaya')">Tasikmalaya (19)</button>
+                            <button class="region-tab" onclick="filterCompanies('Ciamis')">Ciamis (5)</button>
+                            <button class="region-tab" onclick="filterCompanies('Karawang')">Karawang (3)</button>
+                        </div>
+                        <!-- Map inside panel - MOBILE ONLY -->
+                        <div class="map-container-inline mobile-only" style="width: 100%;">
+                            <div id="leafletMapMobile" style="width: 100%; height: 220px !important; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);"></div>
+                            <div class="map-legend-inline" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 0;">
+                                <div class="legend-item"><div class="legend-dot" style="background: #f59e0b;"></div>Bandung</div>
+                                <div class="legend-item"><div class="legend-dot" style="background: #3b82f6;"></div>Bekasi</div>
+                                <div class="legend-item"><div class="legend-dot" style="background: #10b981;"></div>Tasik</div>
+                                <div class="legend-item"><div class="legend-dot" style="background: #ec4899;"></div>Ciamis</div>
+                            </div>
                         </div>
                         <div class="company-cards" id="companyCards"></div>
                     </div>
-                    <div class="map-panel">
+                    <!-- Map Panel - DESKTOP ONLY -->
+                    <div class="map-panel desktop-only">
                         <div class="map-container">
                             <div id="leafletMap" style="width: 100%; height: 100%; border-radius: 12px;"></div>
                         </div>
@@ -1125,7 +2571,6 @@
                             <div class="legend-item"><div class="legend-dot" style="background: #10b981;"></div>Tasikmalaya (19)</div>
                             <div class="legend-item"><div class="legend-dot" style="background: #ec4899;"></div>Ciamis (5)</div>
                             <div class="legend-item"><div class="legend-dot" style="background: #8b5cf6;"></div>Karawang (3)</div>
-                            <div class="legend-item"><div class="legend-dot" style="background: #64748b;"></div>Jakarta/Bogor (3)</div>
                         </div>
                     </div>
                 </div>
@@ -1133,52 +2578,47 @@
         </div>
 
         <!-- SLIDE 16: Tips Sukses PKL -->
-        <div class="slide" data-notes="Gunakan tips ini agar Peserta Didik menjadi Peserta Didik PKL berprestasi: Proaktif, disiplin, kolaborasi, dokumentasi, dan utamakan safety.">
+        <div class="slide">
             <div class="slide-header">
-                <div class="slide-number">SLIDE 16 dari 17</div>
+                <div class="slide-number">SLIDE 17 dari 18</div>
                 <h2 class="slide-title">🏆 Tips Sukses PKL</h2>
                 <p class="slide-subtitle">Panduan Menjadi Peserta Didik PKL yang Kebanggaan Sekolah</p>
             </div>
             <div class="slide-content" style="flex-direction: column; gap: 15px;">
-                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; flex: 1;">
-                    <div class="info-card" style="flex-direction: column; text-align: center; padding: 18px; background: linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(16, 185, 129, 0.4);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #10b981, #059669); margin-bottom: 10px; width: 50px; height: 50px; font-size: 1.5rem;">💬</div>
-                        <h4 style="color: #10b981; font-size: 1.3rem; margin-bottom: 8px;">PROAKTIF</h4>
-                        <div style="font-size: 1.15rem; color: #e2e8f0; line-height: 1.4; text-align: left;">
-                            • <strong>Bertanya</strong> jika tidak paham tugas<br>
-                            • Cari <strong>inisiatif tambahan</strong> saat luang
+                <div style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
+                    <div class="info-card" style="background: linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(16, 185, 129, 0.4);">
+                        <div class="info-icon" style="background: linear-gradient(135deg, #10b981, #059669);">💬</div>
+                        <div class="info-text">
+                            <h4 style="color: #10b981;">PROAKTIF</h4>
+                            <p>Bertanya jika bingung, cari inisiatif saat luang</p>
                         </div>
                     </div>
-                    <div class="info-card" style="flex-direction: column; text-align: center; padding: 18px; background: linear-gradient(145deg, rgba(59, 130, 246, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(59, 130, 246, 0.4);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb); margin-bottom: 10px; width: 50px; height: 50px; font-size: 1.5rem;">⏰</div>
-                        <h4 style="color: #3b82f6; font-size: 1.3rem; margin-bottom: 8px;">DISIPLIN</h4>
-                        <div style="font-size: 1.15rem; color: #e2e8f0; line-height: 1.4; text-align: left;">
-                            • <strong>Hadir tepat waktu</strong> setiap hari<br>
-                            • Taati <strong>seluruh peraturan</strong> industri
+                    <div class="info-card" style="background: linear-gradient(145deg, rgba(59, 130, 246, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(59, 130, 246, 0.4);">
+                        <div class="info-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">⏰</div>
+                        <div class="info-text">
+                            <h4 style="color: #3b82f6;">DISIPLIN</h4>
+                            <p>Hadir tepat waktu & taati aturan industri</p>
                         </div>
                     </div>
-                    <div class="info-card" style="flex-direction: column; text-align: center; padding: 18px; background: linear-gradient(145deg, rgba(245, 158, 11, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(245, 158, 11, 0.4);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706); margin-bottom: 10px; width: 50px; height: 50px; font-size: 1.5rem;">🤝</div>
-                        <h4 style="color: #f59e0b; font-size: 1.3rem; margin-bottom: 8px;">KOLABORASI</h4>
-                        <div style="font-size: 1.15rem; color: #e2e8f0; line-height: 1.4; text-align: left;">
-                            • Bangun <strong>relasi baik</strong> dengan mentor<br>
-                            • Aktif dalam <strong>kerjasama tim</strong>
+                    <div class="info-card" style="background: linear-gradient(145deg, rgba(245, 158, 11, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(245, 158, 11, 0.4);">
+                        <div class="info-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">🤝</div>
+                        <div class="info-text">
+                            <h4 style="color: #f59e0b;">KOLABORASI</h4>
+                            <p>Bangun relasi baik & aktif dalam tim</p>
                         </div>
                     </div>
-                    <div class="info-card" style="flex-direction: column; text-align: center; padding: 18px; background: linear-gradient(145deg, rgba(139, 92, 246, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(139, 92, 246, 0.4);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); margin-bottom: 10px; width: 50px; height: 50px; font-size: 1.5rem;">📝</div>
-                        <h4 style="color: #8b5cf6; font-size: 1.3rem; margin-bottom: 8px;">DOKUMENTASI</h4>
-                        <div style="font-size: 1.15rem; color: #e2e8f0; line-height: 1.4; text-align: left;">
-                            • Catat <strong>kegiatan harian</strong> di jurnal<br>
-                            • Dokumentasikan <strong>hasil kerja</strong> fisik
+                    <div class="info-card" style="background: linear-gradient(145deg, rgba(139, 92, 246, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(139, 92, 246, 0.4);">
+                        <div class="info-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">📝</div>
+                        <div class="info-text">
+                            <h4 style="color: #8b5cf6;">DOKUMENTASI</h4>
+                            <p>Catat harian & foto hasil kerja industri</p>
                         </div>
                     </div>
-                    <div class="info-card" style="flex-direction: column; text-align: center; padding: 18px; background: linear-gradient(145deg, rgba(236, 72, 153, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(236, 72, 153, 0.4);">
-                        <div class="info-icon" style="background: linear-gradient(135deg, #ec4899, #db2777); margin-bottom: 10px; width: 50px; height: 50px; font-size: 1.5rem;">🛡️</div>
-                        <h4 style="color: #ec4899; font-size: 1.3rem; margin-bottom: 8px;">SAFETY</h4>
-                        <div style="font-size: 1.15rem; color: #e2e8f0; line-height: 1.4; text-align: left;">
-                            • Gunakan <strong>APD standar</strong> lengkap<br>
-                            • Pahami <strong>jalur evakuasi</strong> & K3
+                    <div class="info-card" style="background: linear-gradient(145deg, rgba(236, 72, 153, 0.2), rgba(30, 41, 59, 0.95)); border-color: rgba(236, 72, 153, 0.4);">
+                        <div class="info-icon" style="background: linear-gradient(135deg, #ec4899, #db2777);">🛡️</div>
+                        <div class="info-text">
+                            <h4 style="color: #ec4899;">SAFETY</h4>
+                            <p>Gunakan APD & pahami prosedur K3</p>
                         </div>
                     </div>
                 </div>
@@ -1196,9 +2636,9 @@
         </div>
 
         <!-- SLIDE 16: Penutup -->
-        <div class="slide slide-closing" data-notes="Kesimpulan: 90,8% siap bekerja, 84,4% punya rencana PKL, 94,3% siap lanjut magang. Pesan: Tentukan pilihan bijak, jaga integritas, maksimalkan belajar. Selamat berjuang!">
+        <div class="slide slide-closing">
             <div style="max-width: 750px;">
-                <div class="slide-number" style="margin-bottom: 20px;">SLIDE 17 dari 17</div>
+                <div class="slide-number" style="margin-bottom: 20px;">SLIDE 18 dari 18</div>
                 <div class="logo-row" style="margin-bottom: 20px;">
                     <img src="logo_tutwuri.webp" alt="Tut Wuri Handayani" class="logo-img" style="height: 50px;">
                     <img src="logo_smkn2.webp" alt="SMKN 2 Tasikmalaya" class="logo-img" style="height: 65px;">
@@ -1223,7 +2663,7 @@
         </div>
     </div>
 
-    <div class="speaker-notes" id="speakerNotes"><h4>📝 Speaker Notes</h4><p id="notesContent"></p></div>
+    <!-- Removed Speaker Notes Element -->
     
     <!-- Fullscreen Prompt Modal -->
     <div id="fullscreenPrompt" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(10px);">
@@ -1375,12 +2815,10 @@
         let currentSlide = 0;
         const slides = document.querySelectorAll('.slide');
         const totalSlides = slides.length;
-        let notesVisible = false;
 
         function init() {
             createIndicators();
             updateProgressBar();
-            updateSpeakerNotes();
             initCharts();
             
             // Initialize Leaflet map after a short delay (ensure DOM is ready)
@@ -1394,7 +2832,6 @@
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
                 else if (e.key === 'ArrowLeft') prevSlide();
-                else if (e.key === 'n') toggleNotes();
             });
             
             // Touch/Swipe navigation for mobile
@@ -1434,33 +2871,131 @@
             }
         }
 
-        function renderCompanyCards(filter) {
+        // ========================================
+        // SEARCH HIGHLIGHT UTILITY
+        // ========================================
+        function highlightText(text, query) {
+            if (!query || query.trim() === '') return text;
+            const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<mark style="background: rgba(245, 158, 11, 0.4); color: #f8fafc; padding: 0 2px; border-radius: 2px;">$1</mark>');
+        }
+
+        function renderCompanyCards(filter, searchQuery = '') {
             const container = document.getElementById('companyCards');
+            if (!container) return;
+            
             container.innerHTML = '';
-            const filtered = filter === 'all' ? companies : companies.filter(c => c.city.toLowerCase().includes(filter.toLowerCase()));
+            let filtered = filter === 'all' ? [...companies] : companies.filter(c => c.city.toLowerCase().includes(filter.toLowerCase()));
+            
+            // Apply search filter
+            if (searchQuery.trim() !== '') {
+                const query = searchQuery.toLowerCase();
+                filtered = filtered.filter(c => 
+                    c.name.toLowerCase().includes(query) || 
+                    c.address.toLowerCase().includes(query) ||
+                    c.city.toLowerCase().includes(query)
+                );
+            }
+            
             filtered.forEach((company) => {
                 const card = document.createElement('div');
                 card.className = 'company-card';
+                
+                // Apply highlight if search query exists
+                const displayName = highlightText(company.name, searchQuery);
+                const displayAddress = highlightText(company.address, searchQuery);
+                const displayCity = highlightText(company.city, searchQuery);
+                
                 card.innerHTML = `
                     <div style="flex: 1;">
-                        <h5><span class="marker" style="background: ${company.color}"></span>${company.name}</h5>
-                        <p>${company.address}</p>
-                        <span class="badge" style="background: ${company.color}22; color: ${company.color}">${company.city}</span>
+                        <h5><span class="marker" style="background: ${company.color}"></span>${displayName}</h5>
+                        <p>${displayAddress}</p>
+                        <span class="badge" style="background: ${company.color}22; color: ${company.color}">${displayCity}</span>
                     </div>
-                    <button class="nav-btn" style="width: 32px; height: 32px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4);" 
-                            onclick="event.stopPropagation(); window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(company.name + ' ' + company.address)}', '_blank')">
-                        📍
-                    </button>
                 `;
                 card.onclick = () => selectCompany(company, card);
                 container.appendChild(card);
             });
+            
+            // Show "tidak ditemukan" message if no results
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: var(--color-text-muted);">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">🔍</div>
+                        <p>Tidak ada perusahaan ditemukan</p>
+                        <p style="font-size: 0.85rem;">Coba kata kunci lain</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Track current filter for search
+        let currentFilter = 'all';
+
+        function toggleCompanyPanel() {
+            const panel = document.getElementById('companyListPanel');
+            if (panel.classList.contains('expanded')) {
+                panel.classList.remove('expanded');
+                panel.classList.add('collapsed');
+            } else {
+                panel.classList.remove('collapsed');
+                panel.classList.add('expanded');
+            }
+        }
+
+        function searchCompanies(query) {
+            renderCompanyCards(currentFilter, query);
+            // Also filter map markers based on search
+            updateMapMarkersWithSearch(currentFilter, query);
+        }
+
+        // New function to update markers with search filter
+        function updateMapMarkersWithSearch(region, searchQuery = '') {
+            [ {map: leafletMap, layers: markersLayer}, {map: leafletMapMobile, layers: markersLayerMobile} ].forEach(set => {
+                if (!set.map || !set.layers) return;
+                
+                set.layers.clearLayers();
+                let filtered = region === 'all' ? companies : companies.filter(c => c.city.toLowerCase().includes(region.toLowerCase()));
+                if (searchQuery && searchQuery.trim() !== '') {
+                    const query = searchQuery.toLowerCase();
+                    filtered = filtered.filter(c => c.name.toLowerCase().includes(query) || c.address.toLowerCase().includes(query) || c.city.toLowerCase().includes(query));
+                }
+                
+                const bounds = [];
+                filtered.forEach(company => {
+                    if (company.lat && company.lng) {
+                        const icon = L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="background: ${company.color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+                            iconSize: [18, 18],
+                            iconAnchor: [9, 9]
+                        });
+                        const marker = L.marker([company.lat, company.lng], {icon: icon}).bindPopup(`
+                            <div style="font-family: 'Nunito Sans', sans-serif;">
+                                <strong style="color: #1e293b;">${company.name}</strong><br>
+                                <span style="color: #64748b; font-size: 0.85rem;">${company.address}</span><br>
+                                <span style="color: ${company.color}; font-weight: 600;">${company.city}</span>
+                            </div>
+                        `);
+                        set.layers.addLayer(marker);
+                        bounds.push([company.lat, company.lng]);
+                    }
+                });
+                if (bounds.length > 0 && bounds.length <= 5) set.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
+            });
         }
 
         function filterCompanies(region) {
+            // Update current filter
+            currentFilter = region;
+            
             // Update active tab
             document.querySelectorAll('#mapTabs .region-tab').forEach(tab => tab.classList.remove('active'));
             event.target.classList.add('active');
+            
+            // Clear search input
+            const searchInput = document.getElementById('companySearch');
+            if (searchInput) searchInput.value = '';
             
             // Render company cards for selected region
             renderCompanyCards(region);
@@ -1471,124 +3006,140 @@
 
         // Leaflet map variables
         let leafletMap = null;
+        let leafletMapMobile = null;
         let markersLayer = null;
+        let markersLayerMobile = null;
         let mapInitialized = false;
+        let mapObserver = null;
 
         function initLeafletMap() {
             if (mapInitialized) return;
             mapInitialized = true;
             
-            const mapContainer = document.getElementById('leafletMap');
-            if (!mapContainer) return;
+            // Check if Leaflet library is loaded
+            if (typeof L === 'undefined') return;
             
-            // Initialize map centered on Jawa Barat
-            leafletMap = L.map('leafletMap', {
-                center: [-6.9, 107.5],
-                zoom: 8,
-                zoomControl: true,
-                attributionControl: false
-            });
+            // Initialize Desktop Map
+            const desktopContainer = document.getElementById('leafletMap');
+            if (desktopContainer) {
+                try {
+                    leafletMap = L.map('leafletMap', {
+                        center: [-6.9, 107.5],
+                        zoom: 8,
+                        zoomControl: true,
+                        attributionControl: false
+                    });
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap',
+                        maxZoom: 18
+                    }).addTo(leafletMap);
+                    markersLayer = L.layerGroup().addTo(leafletMap);
+                } catch (e) { console.error('Desktop map error:', e); }
+            }
+
+            // Initialize Mobile Map
+            const mobileContainer = document.getElementById('leafletMapMobile');
+            if (mobileContainer) {
+                try {
+                    leafletMapMobile = L.map('leafletMapMobile', {
+                        center: [-6.9, 107.5],
+                        zoom: 8,
+                        zoomControl: false,
+                        attributionControl: false
+                    });
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap',
+                        maxZoom: 18
+                    }).addTo(leafletMapMobile);
+                    markersLayerMobile = L.layerGroup().addTo(leafletMapMobile);
+                } catch (e) { console.error('Mobile map error:', e); }
+            }
             
-            // Add OpenStreetMap tiles with faster loading options
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap',
-                maxZoom: 18,
-                updateWhenIdle: true,
-                updateWhenZooming: false
-            }).addTo(leafletMap);
-            
-            // Create markers layer group
-            markersLayer = L.layerGroup().addTo(leafletMap);
-            
-            // Add all company markers initially
             updateMapMarkers('all');
             
-            // Force immediate size update
-            setTimeout(() => leafletMap.invalidateSize(), 50);
-            setTimeout(() => leafletMap.invalidateSize(), 200);
-            setTimeout(() => leafletMap.invalidateSize(), 500);
-            setTimeout(() => leafletMap.invalidateSize(), 1000);
-            
-            // Handle window resize
+            // Handle resize and observation
             window.addEventListener('resize', () => {
                 if (leafletMap) leafletMap.invalidateSize();
+                if (leafletMapMobile) leafletMapMobile.invalidateSize();
             });
+
+            if (desktopContainer) setupMapObserver(desktopContainer);
+            if (mobileContainer) setupMapObserver(mobileContainer);
         }
         
-        // Refresh map when slide becomes visible - more aggressive
-        function refreshMapOnSlide() {
-            if (leafletMap) {
-                // Multiple invalidations to ensure tiles load
-                leafletMap.invalidateSize();
-                setTimeout(() => {
-                    leafletMap.invalidateSize();
-                    leafletMap.setView([-6.9, 107.5], 8);
-                }, 100);
-                setTimeout(() => leafletMap.invalidateSize(), 300);
-                setTimeout(() => leafletMap.invalidateSize(), 600);
-                setTimeout(() => {
-                    leafletMap.invalidateSize();
-                    // Force tile redraw
-                    leafletMap.eachLayer(layer => {
-                        if (layer.redraw) layer.redraw();
+        // IntersectionObserver for map visibility detection
+        function setupMapObserver(mapContainer) {
+            if ('IntersectionObserver' in window) {
+                mapObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            if (leafletMap) leafletMap.invalidateSize();
+                            if (leafletMapMobile) leafletMapMobile.invalidateSize();
+                        }
                     });
-                }, 1000);
-            } else {
-                initLeafletMap();
+                }, { threshold: 0.1 });
+                
+                mapObserver.observe(mapContainer);
             }
+        }
+        
+        // Refresh map when slide becomes visible
+        function refreshMapOnSlide() {
+            [leafletMap, leafletMapMobile].forEach(map => {
+                if (map) {
+                    map.invalidateSize();
+                    setTimeout(() => {
+                        map.invalidateSize();
+                        map.setView([-6.9, 107.5], 8);
+                    }, 100);
+                } else {
+                    initLeafletMap();
+                }
+            });
         }
 
         function updateMapMarkers(region) {
-            if (!leafletMap || !markersLayer) return;
-            
-            // Clear existing markers
-            markersLayer.clearLayers();
-            
-            // Filter companies
-            const filtered = region === 'all' ? companies : companies.filter(c => c.city.toLowerCase().includes(region.toLowerCase()));
-            
-            // Add markers for each company
-            const bounds = [];
-            filtered.forEach(company => {
-                if (company.lat && company.lng) {
-                    // Create custom icon with company color
-                    const icon = L.divIcon({
-                        className: 'custom-marker',
-                        html: `<div style="background: ${company.color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
-                        iconSize: [18, 18],
-                        iconAnchor: [9, 9]
-                    });
-                    
-                    const marker = L.marker([company.lat, company.lng], {icon: icon})
-                        .bindPopup(`
-                            <div style="font-family: 'Nunito Sans', sans-serif;">
-                                <strong style="color: #1e293b;">${company.name}</strong><br>
-                                <span style="color: #64748b; font-size: 0.85rem;">${company.address}</span><br>
-                                <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="color: ${company.color}; font-weight: 600;">${company.city}</span>
-                                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(company.name + ' ' + company.address)}" 
-                                       target="_blank" 
-                                       style="background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: 700;">
-                                       Buka di Maps
-                                    </a>
+            [ {map: leafletMap, layers: markersLayer}, {map: leafletMapMobile, layers: markersLayerMobile} ].forEach(set => {
+                if (!set.map || !set.layers) return;
+                
+                set.layers.clearLayers();
+                const filtered = region === 'all' ? companies : companies.filter(c => c.city.toLowerCase().includes(region.toLowerCase()));
+                const bounds = [];
+                
+                filtered.forEach(company => {
+                    if (company.lat && company.lng) {
+                        const icon = L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="background: ${company.color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+                            iconSize: [18, 18],
+                            iconAnchor: [9, 9]
+                        });
+                        
+                        const marker = L.marker([company.lat, company.lng], {icon: icon})
+                            .bindPopup(`
+                                <div style="font-family: 'Nunito Sans', sans-serif;">
+                                    <strong style="color: #1e293b;">${company.name}</strong><br>
+                                    <span style="color: #64748b; font-size: 0.85rem;">${company.address}</span><br>
+                                    <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="color: ${company.color}; font-weight: 600;">${company.city}</span>
+                                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(company.name + ' ' + company.address)}" 
+                                           target="_blank" 
+                                           style="background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-size: 0.75rem; font-weight: 700;">
+                                           Buka di Maps
+                                        </a>
+                                    </div>
                                 </div>
-                            </div>
-                        `)
-                        .addTo(markersLayer);
-                    
-                    bounds.push([company.lat, company.lng]);
+                            `)
+                            .addTo(set.layers);
+                        bounds.push([company.lat, company.lng]);
+                    }
+                });
+                
+                if (bounds.length > 0) {
+                    if (region === 'all') set.map.setView([-6.9, 107.5], 8);
+                    else set.map.fitBounds(L.latLngBounds(bounds), {padding: [30, 30], maxZoom: 13});
                 }
             });
-            
-            // Fit map to bounds of markers
-            if (bounds.length > 0) {
-                if (region === 'all') {
-                    leafletMap.setView([-6.9, 107.5], 8);
-                } else {
-                    const latLngBounds = L.latLngBounds(bounds);
-                    leafletMap.fitBounds(latLngBounds, {padding: [30, 30], maxZoom: 13});
-                }
-            }
         }
 
         // Tab switching for company list slide
@@ -1606,17 +3157,17 @@
             document.querySelectorAll('.company-card').forEach(c => c.classList.remove('selected'));
             cardElement.classList.add('selected');
             
-            // Focus on selected company in Leaflet map
-            if (leafletMap && company.lat && company.lng) {
-                leafletMap.setView([company.lat, company.lng], 15);
-                
-                // Open popup for this company
-                markersLayer.eachLayer(layer => {
-                    if (layer.getLatLng().lat === company.lat && layer.getLatLng().lng === company.lng) {
-                        layer.openPopup();
-                    }
-                });
-            }
+            // Focus on selected company in Leaflet maps
+            [ {map: leafletMap, layers: markersLayer}, {map: leafletMapMobile, layers: markersLayerMobile} ].forEach(set => {
+                if (set.map && set.layers && company.lat && company.lng) {
+                    set.map.setView([company.lat, company.lng], 15);
+                    set.layers.eachLayer(layer => {
+                        if (layer.getLatLng().lat === company.lat && layer.getLatLng().lng === company.lng) {
+                            layer.openPopup();
+                        }
+                    });
+                }
+            });
         }
 
         // Video player functions
@@ -1653,39 +3204,14 @@
 
         function updateIndicators() { document.querySelectorAll('.indicator-dot').forEach((dot, i) => { dot.className = `indicator-dot ${i === currentSlide ? 'active' : ''}`; }); }
         function updateProgressBar() { document.getElementById('progressBar').style.width = `${((currentSlide + 1) / totalSlides) * 100}%`; }
-        function updateSpeakerNotes() { document.getElementById('notesContent').textContent = slides[currentSlide].dataset.notes || ''; }
+        function updateProgressBar() { document.getElementById('progressBar').style.width = `${((currentSlide + 1) / totalSlides) * 100}%`; }
+        /* Removed updateSpeakerNotes JS */
         
         // Count-up animation for stat values
-        function animateCountUp(element, target, duration = 1500) {
-            const start = 0;
-            const startTime = performance.now();
-            const isDecimal = String(target).includes('.');
+        function animateCountUp(element, target, duration = 0) {
             const isPercentage = String(element.textContent).includes('%');
-            
-            function easeOutQuart(t) {
-                return 1 - Math.pow(1 - t, 4);
-            }
-            
-            function update(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const easedProgress = easeOutQuart(progress);
-                const current = start + (target - start) * easedProgress;
-                
-                if (isDecimal) {
-                    element.textContent = current.toFixed(1) + (isPercentage ? '%' : '');
-                } else {
-                    element.textContent = Math.floor(current) + (isPercentage ? '%' : '');
-                }
-                
-                if (progress < 1) {
-                    requestAnimationFrame(update);
-                } else {
-                    element.textContent = target + (isPercentage ? '%' : '');
-                }
-            }
-            
-            requestAnimationFrame(update);
+            const suffix = isPercentage ? '%' : '';
+            element.textContent = target + suffix;
         }
         
         function animateSlideStats(slideIndex) {
@@ -1701,7 +3227,7 @@
                     el.dataset.hasPercent = text.includes('%') ? 'true' : 'false';
                     
                     // Start animation
-                    animateCountUp(el, numericValue, 1500);
+                    animateCountUp(el, numericValue, 0);
                 }
             });
             
@@ -1712,40 +3238,40 @@
                 const numericValue = parseFloat(text.replace('%', '').replace(',', '.'));
                 
                 if (!isNaN(numericValue)) {
-                    animateCountUp(el, numericValue, 1500);
+                    animateCountUp(el, numericValue, 0);
                 }
             });
         }
         
         function goToSlide(index) { 
             const prevIndex = currentSlide;
-            slides[prevIndex].classList.add('exit');
-            slides[prevIndex].classList.remove('active');
-            
-            setTimeout(() => {
-                slides[prevIndex].classList.remove('exit');
-            }, 800);
+            if (prevIndex !== -1) {
+                slides[prevIndex].classList.remove('active');
+            }
 
             currentSlide = index; 
             slides[currentSlide].classList.add('active'); 
             updateIndicators(); 
             updateProgressBar(); 
-            updateSpeakerNotes();
             
-            // Trigger count-up animation for new slide
-            setTimeout(() => animateSlideStats(currentSlide), 300);
+            // Show stats and charts instantly
+            animateSlideStats(currentSlide);
+            animateChartsOnSlide(currentSlide);
             
-            // Trigger chart animation for new slide
-            setTimeout(() => animateChartsOnSlide(currentSlide), 200);
-            
-            // Refresh map when entering map slide (index 14 based on total 17 slides)
-            if (currentSlide === 14) {
-                setTimeout(() => refreshMapOnSlide(), 150);
+            // Refresh map when entering map slide (Peta Lokasi Perusahaan Mitra - index 15)
+            if (currentSlide === 15) {
+                refreshMapOnSlide();
+            }
+
+            // Lazy load iframes
+            const iframe = slides[currentSlide].querySelector('iframe[data-src]');
+            if (iframe && iframe.src === 'about:blank') {
+                iframe.src = iframe.dataset.src;
             }
         }
         function nextSlide() { if (currentSlide < totalSlides - 1) goToSlide(currentSlide + 1); }
         function prevSlide() { if (currentSlide > 0) goToSlide(currentSlide - 1); }
-        function toggleNotes() { notesVisible = !notesVisible; document.getElementById('speakerNotes').className = `speaker-notes ${notesVisible ? 'visible' : ''}`; }
+        /* Removed toggleNotes JS */
 
         // Store chart instances for animation reset
         let chartInstances = {};
@@ -1755,11 +3281,10 @@
             const isMobile = window.innerWidth <= 768;
             const isSmallMobile = window.innerWidth <= 480;
             
-            // Animation settings
+            // Animation settings - ENABLED for smooth visuals
             const chartAnimation = {
-                duration: 1500,
-                easing: 'easeOutQuart',
-                delay: (context) => context.dataIndex * 100
+                duration: 600,
+                easing: 'easeOutQuart'
             };
 
             // Responsive legend and font sizes
@@ -1767,7 +3292,7 @@
             const datalabelFontSize = isSmallMobile ? 10 : (isMobile ? 12 : 14);
             const legendPosition = isMobile ? 'bottom' : 'right';
 
-            // 3D-like options with datalabels and animation
+            // 3D-like options with datalabels and animation - ENABLED
             const doughnut3DOptions = {
                 responsive: true, 
                 maintainAspectRatio: false,
@@ -1775,7 +3300,7 @@
                 animation: {
                     animateRotate: true,
                     animateScale: true,
-                    duration: 1500,
+                    duration: 600,
                     easing: 'easeOutQuart'
                 },
                 plugins: {
@@ -1806,9 +3331,8 @@
                 maintainAspectRatio: false, 
                 indexAxis: 'y',
                 animation: {
-                    duration: 1500,
-                    easing: 'easeOutQuart',
-                    delay: (context) => context.dataIndex * 150
+                    duration: 600,
+                    easing: 'easeOutQuart'
                 },
                 plugins: {
                     legend: { display: false },
@@ -1816,7 +3340,7 @@
                         anchor: 'center', 
                         align: 'center', 
                         color: '#fff', 
-                        font: { weight: 'bold', size: datalabelFontSize - 1 }, 
+                        font: { weight: 'bold', size: datalabelFontSize }, 
                         formatter: (value) => value, 
                         textShadowBlur: 3, 
                         textShadowColor: 'rgba(0,0,0,0.5)',
@@ -1825,15 +3349,15 @@
                 },
                 scales: {
                     x: { 
-                        ticks: { color: '#94a3b8', font: { size: isMobile ? 9 : 11 } }, 
+                        ticks: { color: '#94a3b8', font: { size: isMobile ? 10 : 12 } }, 
                         grid: { color: 'rgba(148,163,184,0.1)' } 
                     },
                     y: { 
-                        ticks: { color: '#f8fafc', font: { size: isMobile ? 9 : 11 } }, 
+                        ticks: { color: '#f8fafc', font: { size: isMobile ? 14 : 18, weight: '600' } }, 
                         grid: { display: false } 
                     }
                 },
-                barThickness: isMobile ? 18 : 28
+                barThickness: isMobile ? 32 : 45
             };
 
             // Career Chart (3D Doughnut)
@@ -1851,7 +3375,7 @@
                 type: 'bar',
                 data: {
                     labels: ['Tasikmalaya', 'Bandung', 'Cikarang', 'Karawang', 'Lainnya'],
-                    datasets: [{ data: [60, 49, 14, 8, 10], backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#64748b'], borderRadius: 8, borderSkipped: false, barThickness: 28 }]
+                    datasets: [{ data: [60, 49, 14, 8, 10], backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#64748b'], borderRadius: 8, borderSkipped: false, barThickness: 45 }]
                 },
                 options: bar3DOptions
             });
